@@ -1,5 +1,6 @@
-import { useState, useMemo, useEffect, useCallback } from 'react'
+import { useState, useMemo, useEffect, useCallback, useRef } from 'react'
 import { useSavings, usePrimaryCurrency, useFxRates, addSaving, useFlows } from './hooks'
+import { exportData, importData } from './dataIO'
 import { convert, formatMoney } from './currency'
 import { type SavingEntry } from './db'
 import { monthlyAmount } from './components/IncomeExpenses'
@@ -94,6 +95,21 @@ export default function App() {
 
   const FILTERS: FilterCategory[] = ['all', 'cash', 'bank', 'stocks', 'rrsp']
 
+  const importInputRef = useRef<HTMLInputElement>(null)
+
+  async function handleImport(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    try {
+      await importData(file)
+      window.location.reload()
+    } catch (err) {
+      alert(`Import failed: ${err instanceof Error ? err.message : String(err)}`)
+    } finally {
+      e.target.value = ''
+    }
+  }
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
       {/* ── Header ── */}
@@ -105,6 +121,28 @@ export default function App() {
           )}
         </div>
         <div className="flex items-center gap-2">
+          {/* Export / Import — always visible */}
+          <input
+            ref={importInputRef}
+            type="file"
+            accept=".json,application/json"
+            className="hidden"
+            onChange={handleImport}
+          />
+          <button
+            onClick={() => exportData()}
+            title="Export all data"
+            className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 transition text-sm"
+          >
+            📤
+          </button>
+          <button
+            onClick={() => importInputRef.current?.click()}
+            title="Import data"
+            className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 transition text-sm"
+          >
+            📥
+          </button>
           {activeTab === 'savings' && (
             <>
               <CurrencySelector current={primary} onChange={setPrimary} />
