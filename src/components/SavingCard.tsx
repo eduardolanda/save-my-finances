@@ -75,7 +75,7 @@ export default function SavingCard({
   return (
     <div
       className={`relative rounded-2xl bg-gradient-to-br ${gradient} p-4 flex flex-col justify-between shadow-lg cursor-pointer group transition-transform hover:scale-105 aspect-square`}
-      style={{ width: size, maxWidth: '100%', minWidth: 120, minHeight: 120 }}
+      style={{ width: size, maxWidth: "100%", minWidth: 120, minHeight: 120 }}
       onClick={() => setEditing(true)}
     >
       {/* Badges */}

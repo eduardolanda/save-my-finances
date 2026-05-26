@@ -10,7 +10,7 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: ["favicon.ico"],
+      includeAssets: ["favicon.png"],
       manifest: {
         name: "La Vaquita",
         short_name: "Vaquita",
@@ -19,11 +19,9 @@ export default defineConfig({
         background_color: "#FFF6E5",
         display: "standalone",
         icons: [
-          { src: "/favicon-48x48.png", sizes: "48x48", type: "image/png" },
-          { src: "/favicon-128x128.png", sizes: "128x128", type: "image/png" },
           {
-            src: "/favicon-256x256.png",
-            sizes: "256x256",
+            src: "/favicon.png",
+            sizes: "512x512",
             type: "image/png",
             purpose: "any maskable",
           },
