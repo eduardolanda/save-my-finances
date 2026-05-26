@@ -157,14 +157,6 @@ export default function App() {
         </div>
         <div className="flex items-center gap-2">
           <CurrencySelector current={primary} onChange={setPrimary} />
-          <button
-            onClick={refresh}
-            disabled={ratesLoading || offline}
-            title="Refresh rates"
-            className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 disabled:opacity-40 transition text-sm"
-          >
-            {ratesLoading ? "⏳" : "↻"}
-          </button>
           {activeTab === "savings" && (
             <button
               onClick={() => setShowAdd(true)}
