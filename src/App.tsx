@@ -137,10 +137,7 @@ export default function App() {
     }
   }
 
-  const {
-    needRefresh: [needRefresh],
-    updateServiceWorker,
-  } = useRegisterSW();
+  const { updateServiceWorker } = useRegisterSW();
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
