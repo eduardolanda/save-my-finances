@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useCallback, useRef } from "react";
-import { useRegisterSW } from 'virtual:pwa-register/react';
+import { useRegisterSW } from "virtual:pwa-register/react";
 import logo from "./assets/logo.png";
 import {
   useSavings,
@@ -31,7 +31,13 @@ const CATEGORY_ICON: Record<string, string> = {
 };
 
 export default function App() {
-  const validTabs: Tab[] = ["dashboard", "savings", "mortgage", "income", "settings"];
+  const validTabs: Tab[] = [
+    "dashboard",
+    "savings",
+    "mortgage",
+    "income",
+    "settings",
+  ];
   const hashTab = window.location.hash.replace("#", "") as Tab;
   const [activeTab, setActiveTab] = useState<Tab>(
     validTabs.includes(hashTab) ? hashTab : "dashboard",
@@ -137,82 +143,89 @@ export default function App() {
 
   // ── Theme ──────────────────────────────────────────────────────
   const [isDark, setIsDark] = useState(() => {
-    const stored = localStorage.getItem('vq-theme');
-    return stored ? stored === 'dark' : true; // default dark for continuity
+    const stored = localStorage.getItem("vq-theme");
+    return stored ? stored === "dark" : true; // default dark for continuity
   });
   const toggleTheme = () => setIsDark((d) => !d);
   useEffect(() => {
-    document.documentElement.classList.toggle('dark', isDark);
-    localStorage.setItem('vq-theme', isDark ? 'dark' : 'light');
+    document.documentElement.classList.toggle("dark", isDark);
+    localStorage.setItem("vq-theme", isDark ? "dark" : "light");
   }, [isDark]);
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
       {/* ── Header + Tab bar (sticky together) ── */}
       <div className="sticky top-0 z-40">
-      {/* ── Header ── */}
-      <header className="bg-slate-950/90 backdrop-blur border-b border-slate-800 px-4 py-3 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <img src={logo} alt="La Vaquita" className="h-8 w-8 rounded-lg" />
-          <span className="text-xl font-bold tracking-tight">La Vaquita</span>
-          {offline && (
-            <span className="text-xs px-2 py-0.5 rounded-full bg-amber-900 text-amber-300 font-semibold">
-              Offline
-            </span>
-          )}
-        </div>
-        <div className="flex items-center gap-2">
-          <CurrencySelector current={primary} onChange={setPrimary} />
-          <button
-            onClick={toggleTheme}
-            title={isDark ? "Switch to light mode" : "Switch to dark mode"}
-            className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 transition text-base leading-none"
-          >
-            {isDark ? "☀️" : "🌙"}
-          </button>
-          {activeTab === "savings" && (
+        {/* ── Header ── */}
+        <header className="bg-slate-950/90 backdrop-blur border-b border-slate-800 px-4 py-3 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <img
+              src={logo}
+              alt="La Vaquita"
+              className="h-8 w-8 rounded-lg"
+            />
+            <span className="text-xl font-bold tracking-tight">La Vaquita</span>
+            {offline && (
+              <span className="text-xs px-2 py-0.5 rounded-full bg-amber-900 text-amber-300 font-semibold">
+                Offline
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <CurrencySelector
+              current={primary}
+              onChange={setPrimary}
+            />
             <button
-              onClick={() => setShowAdd(true)}
-              className="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold transition"
+              onClick={toggleTheme}
+              title={isDark ? "Switch to light mode" : "Switch to dark mode"}
+              className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 transition text-base leading-none"
             >
-              + Add
+              {isDark ? "☀️" : "🌙"}
             </button>
-          )}
-        </div>
-      </header>
+            {activeTab === "savings" && (
+              <button
+                onClick={() => setShowAdd(true)}
+                className="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold transition"
+              >
+                + Add
+              </button>
+            )}
+          </div>
+        </header>
 
-      {/* ── Tab bar ── */}
-      <nav className="bg-slate-950 border-b border-slate-800 flex">
-        {(
-          [
-            { id: "dashboard", label: "🏠 Home", short: "🏠\nHome" },
-            { id: "savings", label: "🏦 Savings", short: "🏦\nSavings" },
-            {
-              id: "income",
-              label: "💸 Income & Expenses",
-              short: "💸\nIncome",
-            },
-            { id: "mortgage", label: "📐 Mortgage", short: "📐\nMortgage" },
-            { id: "settings", label: "⚙️ Settings", short: "⚙️\nSettings" },
-          ] as { id: Tab; label: string; short: string }[]
-        ).map(({ id, label, short }) => (
-          <button
-            key={id}
-            onClick={() => navigate(id)}
-            className={`flex-1 py-2.5 text-xs sm:text-sm font-semibold border-b-2 transition -mb-px text-center leading-tight ${
-              activeTab === id
-                ? "border-indigo-500 text-indigo-300"
-                : "border-transparent text-slate-500 hover:text-slate-300"
-            }`}
-          >
-            <span className="hidden sm:inline">{label}</span>
-            <span className="sm:hidden flex flex-col items-center gap-0.5">
-              <span>{short.split("\n")[0]}</span>
-              <span className="text-[10px]">{short.split("\n")[1]}</span>
-            </span>
-          </button>
-        ))}
-      </nav>
+        {/* ── Tab bar ── */}
+        <nav className="bg-slate-950 border-b border-slate-800 flex">
+          {(
+            [
+              { id: "dashboard", label: "🏠 Home", short: "🏠\nHome" },
+              { id: "savings", label: "🏦 Savings", short: "🏦\nSavings" },
+              {
+                id: "income",
+                label: "💸 Income & Expenses",
+                short: "💸\nIncome",
+              },
+              { id: "mortgage", label: "📐 Mortgage", short: "📐\nMortgage" },
+              { id: "settings", label: "⚙️ Settings", short: "⚙️\nSettings" },
+            ] as { id: Tab; label: string; short: string }[]
+          ).map(({ id, label, short }) => (
+            <button
+              key={id}
+              onClick={() => navigate(id)}
+              className={`flex-1 py-2.5 text-xs sm:text-sm font-semibold border-b-2 transition -mb-px text-center leading-tight ${
+                activeTab === id
+                  ? "border-indigo-500 text-indigo-300"
+                  : "border-transparent text-slate-500 hover:text-slate-300"
+              }`}
+            >
+              <span className="hidden sm:inline">{label}</span>
+              <span className="sm:hidden flex flex-col items-center gap-0.5">
+                <span>{short.split("\n")[0]}</span>
+                <span className="text-[10px]">{short.split("\n")[1]}</span>
+              </span>
+            </button>
+          ))}
+        </nav>
       </div>
 
       <main className="flex-1 px-4 py-6 max-w-5xl mx-auto w-full">
@@ -243,7 +256,7 @@ export default function App() {
                 <p className="text-xs text-slate-400 uppercase tracking-widest mb-1">
                   Total ({primary})
                 </p>
-                <p className="text-2xl sm:text-4xl font-bold text-white tabular-nums">
+                <p className="text-2xl sm:text-4xl font-bold text-slate-100 tabular-nums">
                   {formatMoney(totalInPrimary, primary)}
                 </p>
                 {ratesLoading && (
@@ -390,10 +403,14 @@ export default function App() {
               onChange={handleImport}
             />
             <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 flex flex-col gap-4">
-              <h2 className="text-base font-bold text-slate-100">⚙️ Settings</h2>
+              <h2 className="text-base font-bold text-slate-100">
+                ⚙️ Settings
+              </h2>
 
               <div className="flex flex-col gap-2">
-                <p className="text-xs text-slate-400 uppercase tracking-widest">Data</p>
+                <p className="text-xs text-slate-400 uppercase tracking-widest">
+                  Data
+                </p>
                 <button
                   onClick={() => exportData()}
                   className="w-full px-4 py-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-semibold transition text-left flex items-center gap-3"
@@ -401,7 +418,10 @@ export default function App() {
                   <span className="text-lg">📤</span>
                   <div>
                     <p>Export data</p>
-                    <p className="text-xs font-normal text-slate-500">Download a backup of all your savings, flows &amp; settings</p>
+                    <p className="text-xs font-normal text-slate-500">
+                      Download a backup of all your savings, flows &amp;
+                      settings
+                    </p>
                   </div>
                 </button>
                 <button
@@ -411,17 +431,26 @@ export default function App() {
                   <span className="text-lg">📥</span>
                   <div>
                     <p>Import data</p>
-                    <p className="text-xs font-normal text-slate-500">Restore from a previously exported backup (replaces current data)</p>
+                    <p className="text-xs font-normal text-slate-500">
+                      Restore from a previously exported backup (replaces
+                      current data)
+                    </p>
                   </div>
                 </button>
               </div>
 
               <div className="flex flex-col gap-2 pt-2 border-t border-slate-800">
-                <p className="text-xs text-slate-400 uppercase tracking-widest">Appearance</p>
+                <p className="text-xs text-slate-400 uppercase tracking-widest">
+                  Appearance
+                </p>
                 <div className="flex items-center justify-between px-4 py-2.5 rounded-lg bg-slate-800">
                   <div>
-                    <p className="text-sm font-semibold text-slate-200">{isDark ? "Dark mode" : "Light mode"}</p>
-                    <p className="text-xs font-normal text-slate-500">Toggle light / dark theme</p>
+                    <p className="text-sm font-semibold text-slate-200">
+                      {isDark ? "Dark mode" : "Light mode"}
+                    </p>
+                    <p className="text-xs font-normal text-slate-500">
+                      Toggle light / dark theme
+                    </p>
                   </div>
                   <button
                     onClick={toggleTheme}
@@ -436,7 +465,9 @@ export default function App() {
               </div>
 
               <div className="flex flex-col gap-2 pt-2 border-t border-slate-800">
-                <p className="text-xs text-slate-400 uppercase tracking-widest">App</p>
+                <p className="text-xs text-slate-400 uppercase tracking-widest">
+                  App
+                </p>
                 <button
                   onClick={() => updateServiceWorker(true)}
                   className="w-full px-4 py-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-semibold transition text-left flex items-center gap-3"
@@ -444,7 +475,10 @@ export default function App() {
                   <span className="text-lg">↻</span>
                   <div>
                     <p>Force update</p>
-                    <p className="text-xs font-normal text-slate-500">The app updates automatically — tap this if something looks outdated</p>
+                    <p className="text-xs font-normal text-slate-500">
+                      The app updates automatically — tap this if something
+                      looks outdated
+                    </p>
                   </div>
                 </button>
               </div>

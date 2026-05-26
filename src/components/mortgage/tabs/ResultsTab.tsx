@@ -85,20 +85,28 @@ export default function ResultsTab({
             roommate > 0 || strata > 0
               ? `Your share ≈${fmt2(totalMonthlyHousing)}/mo`
               : payFreq !== "monthly"
-              ? `≈${fmt2(pmtMonthlyEquiv)}/mo`
-              : undefined
+                ? `≈${fmt2(pmtMonthlyEquiv)}/mo`
+                : undefined
           }
           color="indigo"
         />
         <Card
           label="Mortgage + Strata"
           value={fmt2(grossMonthlyHousing)}
-          sub={strata > 0 ? `Mortgage ${fmt2(pmtMonthlyEquiv)} + Strata ${fmt2(strata)}` : "No strata set"}
+          sub={
+            strata > 0
+              ? `Mortgage ${fmt2(pmtMonthlyEquiv)} + Strata ${fmt2(strata)}`
+              : "No strata set"
+          }
         />
         <Card
           label="Your Net Payment"
           value={fmt2(totalMonthlyHousing)}
-          sub={roommate > 0 ? `${fmt2(grossMonthlyHousing)} − Roommate ${fmt2(roommate)}` : "No roommate set"}
+          sub={
+            roommate > 0
+              ? `${fmt2(grossMonthlyHousing)} − Roommate ${fmt2(roommate)}`
+              : "No roommate set"
+          }
           color="indigo"
         />
         <Card
@@ -106,12 +114,23 @@ export default function ResultsTab({
           value={fmt(loan)}
           sub={cmhc > 0 ? `+${fmt(cmhc)} CMHC` : undefined}
         />
-        <Card label="Total Interest" value={fmt(totalInterest)} color="red" />
-        <Card label="Total Cost" value={fmt(pmtMonthlyEquiv * amort * 12 + downPayment)} />
+        <Card
+          label="Total Interest"
+          value={fmt(totalInterest)}
+          color="red"
+        />
+        <Card
+          label="Total Cost"
+          value={fmt(pmtMonthlyEquiv * amort * 12 + downPayment)}
+        />
         <Card
           label="Utilities"
           value={fmt2(totalUtilities)}
-          sub={totalUtilities > 0 ? `/mo · ${fmt2(totalMonthlyCost)} all-in` : "No utilities set"}
+          sub={
+            totalUtilities > 0
+              ? `/mo · ${fmt2(totalMonthlyCost)} all-in`
+              : "No utilities set"
+          }
         />
       </div>
 
@@ -121,7 +140,7 @@ export default function ResultsTab({
           <p className="text-xs text-amber-400 uppercase tracking-widest mb-0.5">
             ⚠️ Stress Test @ {(stressRate * 100).toFixed(2)}%
           </p>
-          <p className="text-xl font-bold text-white tabular-nums">
+          <p className="text-xl font-bold text-slate-100 tabular-nums">
             {fmt2(stressPmt)}{" "}
             <span className="text-sm font-normal text-slate-400">
               /{FREQ_SHORT[payFreq]}
@@ -141,8 +160,8 @@ export default function ResultsTab({
             housingRatio! > 40
               ? "bg-rose-900/20 border-rose-800/50"
               : housingRatio! > 30
-              ? "bg-amber-900/20 border-amber-800/50"
-              : "bg-emerald-900/20 border-emerald-800/50"
+                ? "bg-amber-900/20 border-amber-800/50"
+                : "bg-emerald-900/20 border-emerald-800/50"
           }`}
         >
           <div className="flex-1">
@@ -151,13 +170,13 @@ export default function ResultsTab({
                 housingRatio! > 40
                   ? "text-rose-400"
                   : housingRatio! > 30
-                  ? "text-amber-400"
-                  : "text-emerald-400"
+                    ? "text-amber-400"
+                    : "text-emerald-400"
               }`}
             >
               💰 Monthly Left After All Expenses
             </p>
-            <p className="text-xl font-bold text-white tabular-nums">
+            <p className="text-xl font-bold text-slate-100 tabular-nums">
               {fmt2(monthlyLeft)}
               <span className="text-sm font-normal text-slate-400"> /mo</span>
             </p>
@@ -180,8 +199,8 @@ export default function ResultsTab({
                 housingRatio! > 40
                   ? "text-rose-300"
                   : housingRatio! > 30
-                  ? "text-amber-300"
-                  : "text-emerald-300"
+                    ? "text-amber-300"
+                    : "text-emerald-300"
               }`}
             >
               {housingRatio!.toFixed(1)}%
@@ -206,10 +225,27 @@ export default function ResultsTab({
             {payIncr > 0 ? ` + ${fmt2(payIncr)} payment increase` : ""}
           </p>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <Card label="Interest Saved"    value={fmt(interestSaved)}                          color="emerald" />
-            <Card label="Years Saved"       value={`${(monthsSaved / 12).toFixed(1)} yrs`}       color="emerald" sub={`${monthsSaved} months`} />
-            <Card label="Payoff In"         value={`${(extraSchedule.payoffPeriod / ppy).toFixed(1)} yrs`} color="emerald" sub={`${extraSchedule.payoffPeriod} periods`} />
-            <Card label="New Total Interest" value={fmt(extraSchedule.totalInterest)} />
+            <Card
+              label="Interest Saved"
+              value={fmt(interestSaved)}
+              color="emerald"
+            />
+            <Card
+              label="Years Saved"
+              value={`${(monthsSaved / 12).toFixed(1)} yrs`}
+              color="emerald"
+              sub={`${monthsSaved} months`}
+            />
+            <Card
+              label="Payoff In"
+              value={`${(extraSchedule.payoffPeriod / ppy).toFixed(1)} yrs`}
+              color="emerald"
+              sub={`${extraSchedule.payoffPeriod} periods`}
+            />
+            <Card
+              label="New Total Interest"
+              value={fmt(extraSchedule.totalInterest)}
+            />
           </div>
         </div>
       )}

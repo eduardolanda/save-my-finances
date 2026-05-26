@@ -28,21 +28,23 @@ export function Card({
 }) {
   const bg: Record<CardColor, string> = {
     default: "bg-slate-900 border-slate-800",
-    indigo:  "bg-indigo-900/40 border-indigo-700",
+    indigo: "bg-indigo-900/40 border-indigo-700",
     emerald: "bg-emerald-900/30 border-emerald-800",
-    amber:   "bg-amber-900/30 border-amber-800",
-    red:     "bg-red-900/30 border-red-800",
+    amber: "bg-amber-900/30 border-amber-800",
+    red: "bg-red-900/30 border-red-800",
   };
   const txt: Record<CardColor, string> = {
-    default: "text-white",
-    indigo:  "text-indigo-200",
-    emerald: "text-emerald-200",
-    amber:   "text-amber-200",
-    red:     "text-red-200",
+    default: "text-slate-100",
+    indigo: "text-indigo-300",
+    emerald: "text-emerald-400",
+    amber: "text-amber-400",
+    red: "text-red-400",
   };
   return (
     <div className={`p-4 rounded-2xl border ${bg[color]}`}>
-      <p className="text-xs text-slate-400 uppercase tracking-widest mb-1">{label}</p>
+      <p className="text-xs text-slate-400 uppercase tracking-widest mb-1">
+        {label}
+      </p>
       <p className={`text-xl font-bold tabular-nums ${txt[color]}`}>{value}</p>
       {sub && <p className="text-xs text-slate-500 mt-0.5">{sub}</p>}
     </div>

@@ -6,56 +6,56 @@
 :root {
   color-scheme: light;
   /* Surfaces */
-  --vq-bg:        #FFF6E5;
-  --vq-surface:   #FFFFFF;
-  --vq-raised:    #F0F1F3;
-  --vq-muted:     #E6E8EB;
-  --vq-subtle:    #D1D5DB;
+  --vq-bg: #ffffff;
+  --vq-surface: #f2f4f7;
+  --vq-raised: #e8eaed;
+  --vq-muted: #d8dce1;
+  --vq-subtle: #c4c9d1;
   /* Text */
-  --vq-t1:        #13223A;
-  --vq-t2:        #1F3250;
-  --vq-t3:        #4B5563;
-  --vq-t4:        #6B7280;
-  --vq-t5:        #9CA3AF;
-  --vq-t6:        #C4C9D1;
+  --vq-t1: #13223a;
+  --vq-t2: #1f3250;
+  --vq-t3: #4b5563;
+  --vq-t4: #6b7280;
+  --vq-t5: #9ca3af;
+  --vq-t6: #c4c9d1;
   /* Brand accent */
-  --vq-acc-hi:    #1D9A5B;   /* high-contrast green for text on light bg */
+  --vq-acc-hi: #1d9a5b; /* high-contrast green for text on light bg */
   /* Misc */
-  --vq-banner:    #E8F8EF;   /* install-prompt banner bg */
+  --vq-banner: #e8f8ef; /* install-prompt banner bg */
   /* Data colours */
-  --vq-green:     #059669;
-  --vq-red:       #dc2626;
-  --vq-blue:      #2563eb;
-  --vq-amber:     #d97706;
-  --vq-rose:      #e11d48;
+  --vq-green: #059669;
+  --vq-red: #dc2626;
+  --vq-blue: #2563eb;
+  --vq-amber: #d97706;
+  --vq-rose: #e11d48;
 }
 
 /* Dark theme */
 .dark {
   color-scheme: dark;
   /* Surfaces */
-  --vq-bg:        #020617;
-  --vq-surface:   #0f172a;
-  --vq-raised:    #1e293b;
-  --vq-muted:     #334155;
-  --vq-subtle:    #475569;
+  --vq-bg: #020617;
+  --vq-surface: #0f172a;
+  --vq-raised: #1e293b;
+  --vq-muted: #334155;
+  --vq-subtle: #475569;
   /* Text */
-  --vq-t1:        #f1f5f9;
-  --vq-t2:        #e2e8f0;
-  --vq-t3:        #cbd5e1;
-  --vq-t4:        #94a3b8;
-  --vq-t5:        #64748b;
-  --vq-t6:        #475569;
+  --vq-t1: #f1f5f9;
+  --vq-t2: #e2e8f0;
+  --vq-t3: #cbd5e1;
+  --vq-t4: #94a3b8;
+  --vq-t5: #64748b;
+  --vq-t6: #475569;
   /* Brand accent */
-  --vq-acc-hi:    #34d399;   /* high-contrast green for text on dark bg */
+  --vq-acc-hi: #34d399; /* high-contrast green for text on dark bg */
   /* Misc */
-  --vq-banner:    #1e1b4b;
+  --vq-banner: #1e1b4b;
   /* Data colours */
-  --vq-green:     #34d399;
-  --vq-red:       #f87171;
-  --vq-blue:      #93c5fd;
-  --vq-amber:     #fcd34d;
-  --vq-rose:      #fda4af;
+  --vq-green: #34d399;
+  --vq-red: #f87171;
+  --vq-blue: #93c5fd;
+  --vq-amber: #fcd34d;
+  --vq-rose: #fda4af;
 }
 
 /* ── Remap Tailwind palette to themed CSS vars ──────── */
@@ -76,10 +76,10 @@
   /* indigo → brand green */
   --color-indigo-200: var(--vq-acc-hi);
   --color-indigo-300: var(--vq-acc-hi);
-  --color-indigo-400: #2DB670;
-  --color-indigo-500: #34c97d;        /* hover highlight */
-  --color-indigo-600: #2DB670;        /* primary buttons & card gradients */
-  --color-indigo-700: #1D9A5B;
+  --color-indigo-400: #2db670;
+  --color-indigo-500: #34c97d; /* hover highlight */
+  --color-indigo-600: #2db670; /* primary buttons & card gradients */
+  --color-indigo-700: #1d9a5b;
   --color-indigo-800: #166c42;
   --color-indigo-900: #0d5c36;
   --color-indigo-950: var(--vq-banner);
@@ -87,28 +87,37 @@
   /* data colours (theme-responsive) */
   --color-emerald-300: var(--vq-green);
   --color-emerald-400: var(--vq-green);
-  --color-red-400:     var(--vq-red);
-  --color-rose-300:    var(--vq-rose);
-  --color-rose-400:    var(--vq-rose);
-  --color-blue-400:    var(--vq-blue);
-  --color-amber-300:   var(--vq-amber);
-  --color-amber-400:   var(--vq-amber);
+  --color-red-400: var(--vq-red);
+  --color-rose-300: var(--vq-rose);
+  --color-rose-400: var(--vq-rose);
+  --color-blue-400: var(--vq-blue);
+  --color-amber-300: var(--vq-amber);
+  --color-amber-400: var(--vq-amber);
 }
 
 /* ── Enable class-based dark: variant ───────────────── */
 @variant dark (&:where(.dark, .dark *));
 
 /* ── Base styles ─────────────────────────────────────── */
-*, *::before, *::after { box-sizing: border-box; }
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
 
 /* Prevent iOS Safari from zooming in on input focus (requires font-size >= 16px) */
-input, select, textarea {
+input,
+select,
+textarea {
   font-size: max(16px, 1em);
 }
 
 body {
   margin: 0;
-  font-family: system-ui, -apple-system, sans-serif;
+  font-family:
+    system-ui,
+    -apple-system,
+    sans-serif;
   background: var(--vq-bg);
   color: var(--vq-t1);
   min-height: 100svh;
