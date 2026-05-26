@@ -14,7 +14,11 @@ export function usePersistedState<T>(
   useEffect(() => {
     getSetting(DB_PREFIX + key).then((stored) => {
       if (stored !== null) {
-        try { setValue(JSON.parse(stored) as T); } catch { /* ignore */ }
+        try {
+          setValue(JSON.parse(stored) as T);
+        } catch {
+          /* ignore */
+        }
       } else {
         // One-time migration from localStorage
         const lsVal = localStorage.getItem(DB_PREFIX + key);
@@ -22,12 +26,14 @@ export function usePersistedState<T>(
           try {
             setValue(JSON.parse(lsVal) as T);
             localStorage.removeItem(DB_PREFIX + key);
-          } catch { /* ignore */ }
+          } catch {
+            /* ignore */
+          }
         }
       }
       ready.current = true;
     });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Persist to Dexie on change (only after initial load)

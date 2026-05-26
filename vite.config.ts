@@ -4,7 +4,7 @@ import tailwindcss from "@tailwindcss/vite";
 import { VitePWA } from "vite-plugin-pwa";
 
 export default defineConfig({
-  base: '/save-my-finances/',
+  base: "/save-my-finances/",
   plugins: [
     react(),
     tailwindcss(),
@@ -19,9 +19,14 @@ export default defineConfig({
         background_color: "#FFF6E5",
         display: "standalone",
         icons: [
-          { src: "/favicon-48x48.png",   sizes: "48x48",   type: "image/png" },
+          { src: "/favicon-48x48.png", sizes: "48x48", type: "image/png" },
           { src: "/favicon-128x128.png", sizes: "128x128", type: "image/png" },
-          { src: "/favicon-256x256.png", sizes: "256x256", type: "image/png", purpose: "any maskable" },
+          {
+            src: "/favicon-256x256.png",
+            sizes: "256x256",
+            type: "image/png",
+            purpose: "any maskable",
+          },
         ],
       },
       workbox: {

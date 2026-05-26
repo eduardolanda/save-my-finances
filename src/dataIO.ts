@@ -24,7 +24,9 @@ export async function exportData(): Promise<void> {
     settings,
   };
 
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+  const blob = new Blob([JSON.stringify(data, null, 2)], {
+    type: "application/json",
+  });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
@@ -40,7 +42,8 @@ export async function importData(file: File): Promise<void> {
   const text = await file.text();
   const data = JSON.parse(text) as ExportData;
 
-  if (data.version !== 1) throw new Error(`Unsupported export version: ${data.version}`);
+  if (data.version !== 1)
+    throw new Error(`Unsupported export version: ${data.version}`);
 
   await db.transaction("rw", [db.savings, db.flows, db.settings], async () => {
     await db.savings.clear();
@@ -49,10 +52,16 @@ export async function importData(file: File): Promise<void> {
 
     // Strip auto-incremented ids so Dexie assigns fresh ones
     const strip = (rows: object[]) =>
-      rows.map((row) => { const { id: _id, ...rest } = row as Record<string, unknown>; return rest; });
+      rows.map((row) => {
+        const { id: _id, ...rest } = row as Record<string, unknown>;
+        return rest;
+      });
 
-    if (data.savings?.length) await db.savings.bulkAdd(strip(data.savings) as never[]);
-    if (data.flows?.length)   await db.flows.bulkAdd(strip(data.flows) as never[]);
-    if (data.settings?.length) await db.settings.bulkAdd(strip(data.settings) as never[]);
+    if (data.savings?.length)
+      await db.savings.bulkAdd(strip(data.savings) as never[]);
+    if (data.flows?.length)
+      await db.flows.bulkAdd(strip(data.flows) as never[]);
+    if (data.settings?.length)
+      await db.settings.bulkAdd(strip(data.settings) as never[]);
   });
 }
