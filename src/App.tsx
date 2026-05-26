@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useCallback, useRef } from "react";
+import { useRegisterSW } from 'virtual:pwa-register/react';
 import {
   useSavings,
   usePrimaryCurrency,
@@ -18,7 +19,7 @@ import IncomeExpenses from "./components/IncomeExpenses";
 import InstallPrompt from "./components/InstallPrompt";
 import Dashboard from "./components/Dashboard";
 
-type Tab = "dashboard" | "savings" | "mortgage" | "income";
+type Tab = "dashboard" | "savings" | "mortgage" | "income" | "settings";
 type FilterCategory = "all" | SavingEntry["category"];
 
 const CATEGORY_ICON: Record<string, string> = {
@@ -29,7 +30,7 @@ const CATEGORY_ICON: Record<string, string> = {
 };
 
 export default function App() {
-  const validTabs: Tab[] = ["dashboard", "savings", "mortgage", "income"];
+  const validTabs: Tab[] = ["dashboard", "savings", "mortgage", "income", "settings"];
   const hashTab = window.location.hash.replace("#", "") as Tab;
   const [activeTab, setActiveTab] = useState<Tab>(
     validTabs.includes(hashTab) ? hashTab : "dashboard",
@@ -136,6 +137,11 @@ export default function App() {
     }
   }
 
+  const {
+    needRefresh: [needRefresh],
+    updateServiceWorker,
+  } = useRegisterSW();
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
       {/* ── Header ── */}
@@ -151,28 +157,14 @@ export default function App() {
           )}
         </div>
         <div className="flex items-center gap-2">
-          {/* Export / Import — always visible */}
-          <input
-            ref={importInputRef}
-            type="file"
-            accept=".json,application/json"
-            className="hidden"
-            onChange={handleImport}
-          />
-          <button
-            onClick={() => exportData()}
-            title="Export all data"
-            className="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition text-xs font-semibold"
-          >
-            Export
-          </button>
-          <button
-            onClick={() => importInputRef.current?.click()}
-            title="Import data"
-            className="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition text-xs font-semibold"
-          >
-            Import
-          </button>
+          {needRefresh && (
+            <button
+              onClick={() => updateServiceWorker(true)}
+              className="px-2.5 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold animate-pulse"
+            >
+              ↻ Update available
+            </button>
+          )}
           {activeTab === "savings" && (
             <>
               <CurrencySelector
@@ -210,6 +202,7 @@ export default function App() {
               short: "💸\nIncome",
             },
             { id: "mortgage", label: "📐 Mortgage", short: "📐\nMortgage" },
+            { id: "settings", label: "⚙️ Settings", short: "⚙️\nSettings" },
           ] as { id: Tab; label: string; short: string }[]
         ).map(({ id, label, short }) => (
           <button
@@ -394,6 +387,65 @@ export default function App() {
           />
         )}
 
+        {/* ── Settings tab ── */}
+        {activeTab === "settings" && (
+          <div className="flex flex-col gap-6 max-w-md">
+            <input
+              ref={importInputRef}
+              type="file"
+              accept=".json,application/json"
+              className="hidden"
+              onChange={handleImport}
+            />
+            <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 flex flex-col gap-4">
+              <h2 className="text-base font-bold text-slate-100">⚙️ Settings</h2>
+
+              <div className="flex flex-col gap-2">
+                <p className="text-xs text-slate-400 uppercase tracking-widest">Data</p>
+                <button
+                  onClick={() => exportData()}
+                  className="w-full px-4 py-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-semibold transition text-left flex items-center gap-3"
+                >
+                  <span className="text-lg">📤</span>
+                  <div>
+                    <p>Export data</p>
+                    <p className="text-xs font-normal text-slate-500">Download a backup of all your savings, flows &amp; settings</p>
+                  </div>
+                </button>
+                <button
+                  onClick={() => importInputRef.current?.click()}
+                  className="w-full px-4 py-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-semibold transition text-left flex items-center gap-3"
+                >
+                  <span className="text-lg">📥</span>
+                  <div>
+                    <p>Import data</p>
+                    <p className="text-xs font-normal text-slate-500">Restore from a previously exported backup (replaces current data)</p>
+                  </div>
+                </button>
+              </div>
+
+              <div className="flex flex-col gap-2 pt-2 border-t border-slate-800">
+                <p className="text-xs text-slate-400 uppercase tracking-widest">App</p>
+                <button
+                  onClick={() => updateServiceWorker(true)}
+                  className="w-full px-4 py-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-semibold transition text-left flex items-center gap-3"
+                >
+                  <span className="text-lg">↻</span>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <p>Check for updates</p>
+                      {needRefresh && (
+                        <span className="text-xs px-1.5 py-0.5 rounded-full bg-indigo-600 text-white font-semibold">New version!</span>
+                      )}
+                    </div>
+                    <p className="text-xs font-normal text-slate-500">Reload the app with the latest version</p>
+                  </div>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* ── Mortgage tab ── */}
         {activeTab === "mortgage" && (
           <>
@@ -446,7 +498,7 @@ export default function App() {
       </main>
 
       <footer className="text-center text-xs text-slate-700 py-4">
-        Data stored locally · works offline
+        Data stored locally in your browser · works offline
       </footer>
     </div>
   );
