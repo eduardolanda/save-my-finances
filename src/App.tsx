@@ -167,27 +167,22 @@ export default function App() {
               ↻ Update available
             </button>
           )}
+          <CurrencySelector current={primary} onChange={setPrimary} />
+          <button
+            onClick={refresh}
+            disabled={ratesLoading || offline}
+            title="Refresh rates"
+            className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 disabled:opacity-40 transition text-sm"
+          >
+            {ratesLoading ? "⏳" : "↻"}
+          </button>
           {activeTab === "savings" && (
-            <>
-              <CurrencySelector
-                current={primary}
-                onChange={setPrimary}
-              />
-              <button
-                onClick={refresh}
-                disabled={ratesLoading || offline}
-                title="Refresh rates"
-                className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 disabled:opacity-40 transition text-sm"
-              >
-                {ratesLoading ? "⏳" : "↻"}
-              </button>
-              <button
-                onClick={() => setShowAdd(true)}
-                className="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold transition"
-              >
-                + Add
-              </button>
-            </>
+            <button
+              onClick={() => setShowAdd(true)}
+              className="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold transition"
+            >
+              + Add
+            </button>
           )}
         </div>
       </header>
