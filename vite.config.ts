@@ -9,7 +9,7 @@ export default defineConfig({
     react(),
     tailwindcss(),
     VitePWA({
-      registerType: "prompt",
+      registerType: "autoUpdate",
       includeAssets: ["favicon.ico"],
       manifest: {
         name: "Save My Finances",
@@ -21,6 +21,8 @@ export default defineConfig({
         icons: [{ src: "/favicon.ico", sizes: "64x64", type: "image/x-icon" }],
       },
       workbox: {
+        clientsClaim: true,
+        skipWaiting: true,
         globPatterns: ["**/*.{js,css,html,ico,png,svg}"],
       },
     }),

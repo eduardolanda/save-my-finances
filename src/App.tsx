@@ -159,14 +159,6 @@ export default function App() {
           )}
         </div>
         <div className="flex items-center gap-2">
-          {needRefresh && (
-            <button
-              onClick={() => updateServiceWorker(true)}
-              className="px-2.5 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold animate-pulse"
-            >
-              ↻ Update available
-            </button>
-          )}
           <CurrencySelector current={primary} onChange={setPrimary} />
           <button
             onClick={refresh}
@@ -430,13 +422,8 @@ export default function App() {
                 >
                   <span className="text-lg">↻</span>
                   <div>
-                    <div className="flex items-center gap-2">
-                      <p>Check for updates</p>
-                      {needRefresh && (
-                        <span className="text-xs px-1.5 py-0.5 rounded-full bg-indigo-600 text-white font-semibold">New version!</span>
-                      )}
-                    </div>
-                    <p className="text-xs font-normal text-slate-500">Reload the app with the latest version</p>
+                    <p>Force update</p>
+                    <p className="text-xs font-normal text-slate-500">The app updates automatically — tap this if something looks outdated</p>
                   </div>
                 </button>
               </div>
