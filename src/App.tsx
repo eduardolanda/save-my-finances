@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { useRegisterSW } from 'virtual:pwa-register/react';
+import logo from "./assets/logo.png";
 import {
   useSavings,
   usePrimaryCurrency,
@@ -141,9 +142,8 @@ export default function App() {
       {/* ── Header ── */}
       <header className="bg-slate-950/90 backdrop-blur border-b border-slate-800 px-4 py-3 flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <span className="text-xl font-bold tracking-tight">
-            💰 Save My Finances
-          </span>
+          <img src={logo} alt="La Vaquita" className="h-8 w-8 rounded-lg" />
+          <span className="text-xl font-bold tracking-tight">La Vaquita</span>
           {offline && (
             <span className="text-xs px-2 py-0.5 rounded-full bg-amber-900 text-amber-300 font-semibold">
               Offline

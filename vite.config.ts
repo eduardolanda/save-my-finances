@@ -12,13 +12,17 @@ export default defineConfig({
       registerType: "autoUpdate",
       includeAssets: ["favicon.ico"],
       manifest: {
-        name: "Save My Finances",
-        short_name: "Finances",
-        description: "Offline savings tracker",
-        theme_color: "#0f172a",
-        background_color: "#0f172a",
+        name: "La Vaquita",
+        short_name: "Vaquita",
+        description: "Hacemos cuentas, no dramas",
+        theme_color: "#2DB670",
+        background_color: "#FFF6E5",
         display: "standalone",
-        icons: [{ src: "/favicon.ico", sizes: "64x64", type: "image/x-icon" }],
+        icons: [
+          { src: "/favicon-48x48.png",   sizes: "48x48",   type: "image/png" },
+          { src: "/favicon-128x128.png", sizes: "128x128", type: "image/png" },
+          { src: "/favicon-256x256.png", sizes: "256x256", type: "image/png", purpose: "any maskable" },
+        ],
       },
       workbox: {
         clientsClaim: true,
