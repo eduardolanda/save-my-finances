@@ -3,7 +3,6 @@ import {
   MORTGAGE_TYPES,
   calcCMHC,
   calcGST,
-  calcPTT,
   calcPayment,
   buildSchedule,
   minDP,
@@ -12,20 +11,27 @@ import {
   fmtCommas,
   parseN,
 } from "./math";
+import {
+  PROVINCES,
+  calcLTT,
+  hasForeignBuyerTax,
+  ftbNote,
+  type ProvinceCode,
+} from "./provinces";
 import { usePersistedState } from "./usePersistedState";
 import { inputCls, labelCls, Check } from "./ui";
-import ResultsTab  from "./tabs/ResultsTab";
-import CostsTab    from "./tabs/CostsTab";
+import ResultsTab from "./tabs/ResultsTab";
+import CostsTab from "./tabs/CostsTab";
 import ScheduleTab from "./tabs/ScheduleTab";
-import ChartsTab   from "./tabs/ChartsTab";
+import ChartsTab from "./tabs/ChartsTab";
 import type { PayFreq, LumpFreq } from "./types";
 
 // ── Tab config ────────────────────────────────────────────────────────────────
 const TABS = [
-  { id: "results",  label: "📊 Results"  },
-  { id: "costs",    label: "🍁 Costs"    },
+  { id: "results", label: "📊 Results" },
+  { id: "costs", label: "🍁 Costs" },
   { id: "schedule", label: "📅 Schedule" },
-  { id: "charts",   label: "📈 Charts"   },
+  { id: "charts", label: "📈 Charts" },
 ] as const;
 
 type Section = (typeof TABS)[number]["id"];
@@ -37,105 +43,163 @@ type UtilField = [label: string, value: string, set: (v: string) => void];
 export default function MortgageCalculator({
   monthlyIncome = 0,
   monthlyExpenses = 0,
+  province,
 }: {
   monthlyIncome?: number;
   monthlyExpenses?: number;
+  province: ProvinceCode;
 }) {
   // ── Persisted inputs ──────────────────────────────────────────────────────
-  const [priceRaw,    setPriceRaw]    = usePersistedState("price",    "800,000");
-  const [dpRaw,       setDpRaw]       = usePersistedState("dp",       "160,000");
-  const [dpMode,      setDpMode]      = usePersistedState<"$" | "%">("dpMode", "$");
-  const [rateRaw,     setRateRaw]     = usePersistedState("rate",     "4.5");
-  const [amort,       setAmort]       = usePersistedState("amort",    25);
-  const [extraRaw,    setExtraRaw]    = usePersistedState("extra",    "");
-  const [payFreq,     setPayFreq]     = usePersistedState<PayFreq>("payFreq", "monthly");
-  const [mortgageType, setMortgageType] = usePersistedState("mortgageType", "custom");
-  const [extraFreq,   setExtraFreq]   = usePersistedState<LumpFreq>("extraFreq", "annually");
-  const [payIncrRaw,  setPayIncrRaw]  = usePersistedState("payIncr",  "");
-  const [payIncrFreq, setPayIncrFreq] = usePersistedState<LumpFreq>("payIncrFreq", "once");
-  const [strataRaw,   setStrataRaw]   = usePersistedState("strata",   "");
+  const [priceRaw, setPriceRaw] = usePersistedState("price", "800,000");
+  const [dpRaw, setDpRaw] = usePersistedState("dp", "160,000");
+  const [dpMode, setDpMode] = usePersistedState<"$" | "%">("dpMode", "$");
+  const [rateRaw, setRateRaw] = usePersistedState("rate", "4.5");
+  const [amort, setAmort] = usePersistedState("amort", 25);
+  const [extraRaw, setExtraRaw] = usePersistedState("extra", "");
+  const [payFreq, setPayFreq] = usePersistedState<PayFreq>(
+    "payFreq",
+    "monthly",
+  );
+  const [mortgageType, setMortgageType] = usePersistedState(
+    "mortgageType",
+    "custom",
+  );
+  const [extraFreq, setExtraFreq] = usePersistedState<LumpFreq>(
+    "extraFreq",
+    "annually",
+  );
+  const [payIncrRaw, setPayIncrRaw] = usePersistedState("payIncr", "");
+  const [payIncrFreq, setPayIncrFreq] = usePersistedState<LumpFreq>(
+    "payIncrFreq",
+    "once",
+  );
+  const [strataRaw, setStrataRaw] = usePersistedState("strata", "");
   const [roommateRaw, setRoommateRaw] = usePersistedState("roommate", "");
 
   // Utilities
-  const [elecRaw,      setElecRaw]      = usePersistedState("util_elec",      "");
-  const [gasRaw,       setGasRaw]       = usePersistedState("util_gas",       "");
-  const [waterRaw,     setWaterRaw]     = usePersistedState("util_water",     "");
-  const [internetRaw,  setInternetRaw]  = usePersistedState("util_internet",  "");
-  const [phoneRaw,     setPhoneRaw]     = usePersistedState("util_phone",     "");
-  const [insuranceRaw, setInsuranceRaw] = usePersistedState("util_insurance", "");
-  const [garbageRaw,   setGarbageRaw]   = usePersistedState("util_garbage",   "");
+  const [elecRaw, setElecRaw] = usePersistedState("util_elec", "");
+  const [gasRaw, setGasRaw] = usePersistedState("util_gas", "");
+  const [waterRaw, setWaterRaw] = usePersistedState("util_water", "");
+  const [internetRaw, setInternetRaw] = usePersistedState("util_internet", "");
+  const [phoneRaw, setPhoneRaw] = usePersistedState("util_phone", "");
+  const [insuranceRaw, setInsuranceRaw] = usePersistedState(
+    "util_insurance",
+    "",
+  );
+  const [garbageRaw, setGarbageRaw] = usePersistedState("util_garbage", "");
 
   // Property flags
-  const [firstTimeBuyer, setFTB]        = usePersistedState("ftb",      false);
+  const [firstTimeBuyer, setFTB] = usePersistedState("ftb", false);
   const [newConstruction, setNewConstr] = usePersistedState("newConstr", false);
-  const [investmentProp,  setInvestment] = usePersistedState("investment", false);
-  const [foreignBuyer,    setForeign]   = usePersistedState("foreign",  false);
+  const [investmentProp, setInvestment] = usePersistedState(
+    "investment",
+    false,
+  );
+  const [foreignBuyer, setForeign] = usePersistedState("foreign", false);
 
   // UI
-  const [activeSection, setActiveSection] = usePersistedState<Section>("section", "results");
+  const [activeSection, setActiveSection] = usePersistedState<Section>(
+    "section",
+    "results",
+  );
 
   // ── Derived values ────────────────────────────────────────────────────────
-  const price    = parseN(priceRaw);
-  const annRate  = parseFloat(rateRaw) / 100 || 0;
-  const extra    = parseN(extraRaw);
-  const payIncr  = parseN(payIncrRaw);
-  const strata   = parseN(strataRaw);
+  const price = parseN(priceRaw);
+  const annRate = parseFloat(rateRaw) / 100 || 0;
+  const extra = parseN(extraRaw);
+  const payIncr = parseN(payIncrRaw);
+  const strata = parseN(strataRaw);
   const roommate = parseN(roommateRaw);
-  const ppy      = periodsPerYear(payFreq);
+  const ppy = periodsPerYear(payFreq);
 
   const totalUtilities =
-    parseN(elecRaw) + parseN(gasRaw) + parseN(waterRaw) +
-    parseN(internetRaw) + parseN(phoneRaw) + parseN(insuranceRaw) + parseN(garbageRaw);
+    parseN(elecRaw) +
+    parseN(gasRaw) +
+    parseN(waterRaw) +
+    parseN(internetRaw) +
+    parseN(phoneRaw) +
+    parseN(insuranceRaw) +
+    parseN(garbageRaw);
 
   const downPayment = useMemo(() => {
     const raw = parseN(dpRaw);
     return dpMode === "%" ? price * (raw / 100) : raw;
   }, [dpRaw, dpMode, price]);
 
-  const dpPct  = price > 0 ? (downPayment / price) * 100 : 0;
-  const dpMin  = minDP(price);
+  const dpPct = price > 0 ? (downPayment / price) * 100 : 0;
+  const dpMin = minDP(price);
   const dpError = price > 0 && downPayment < dpMin;
 
   const cmhc = calcCMHC(price, downPayment);
   const loan = price - downPayment + cmhc;
-  const pmt  = loan > 0 ? calcPayment(loan, annRate, amort, payFreq) : 0;
+  const pmt = loan > 0 ? calcPayment(loan, annRate, amort, payFreq) : 0;
   const pmtMonthlyEquiv = (pmt * ppy) / 12;
 
-  const grossMonthlyHousing  = pmtMonthlyEquiv + strata;
-  const totalMonthlyHousing  = Math.max(0, grossMonthlyHousing - roommate);
-  const totalMonthlyCost     = totalMonthlyHousing + totalUtilities;
+  const grossMonthlyHousing = pmtMonthlyEquiv + strata;
+  const totalMonthlyHousing = Math.max(0, grossMonthlyHousing - roommate);
+  const totalMonthlyCost = totalMonthlyHousing + totalUtilities;
   const totalMonthlyCommitted = totalMonthlyCost + monthlyExpenses;
-  const monthlyLeft  = monthlyIncome > 0 ? monthlyIncome - totalMonthlyCommitted : null;
-  const housingRatio = monthlyIncome > 0 ? (totalMonthlyCommitted / monthlyIncome) * 100 : null;
+  const monthlyLeft =
+    monthlyIncome > 0 ? monthlyIncome - totalMonthlyCommitted : null;
+  const housingRatio =
+    monthlyIncome > 0 ? (totalMonthlyCommitted / monthlyIncome) * 100 : null;
 
   const baseSchedule = useMemo(
-    () => loan > 0 ? buildSchedule(loan, annRate, amort, payFreq, 0, "annually", 0, "once") : null,
+    () =>
+      loan > 0
+        ? buildSchedule(loan, annRate, amort, payFreq, 0, "annually", 0, "once")
+        : null,
     [loan, annRate, amort, payFreq],
   );
   const extraSchedule = useMemo(
     () =>
       loan > 0 && (extra > 0 || payIncr > 0)
-        ? buildSchedule(loan, annRate, amort, payFreq, extra, extraFreq, payIncr, payIncrFreq)
+        ? buildSchedule(
+            loan,
+            annRate,
+            amort,
+            payFreq,
+            extra,
+            extraFreq,
+            payIncr,
+            payIncrFreq,
+          )
         : null,
     [loan, annRate, amort, payFreq, extra, extraFreq, payIncr, payIncrFreq],
   );
 
-  const totalInterest  = baseSchedule?.totalInterest ?? 0;
-  const hasExtra       = extra > 0 || payIncr > 0;
-  const interestSaved  = hasExtra && baseSchedule && extraSchedule
-    ? baseSchedule.totalInterest - extraSchedule.totalInterest : 0;
-  const periodsSaved   = hasExtra && baseSchedule && extraSchedule
-    ? baseSchedule.payoffPeriod - extraSchedule.payoffPeriod : 0;
-  const monthsSaved    = Math.round((periodsSaved / ppy) * 12);
+  const totalInterest = baseSchedule?.totalInterest ?? 0;
+  const hasExtra = extra > 0 || payIncr > 0;
+  const interestSaved =
+    hasExtra && baseSchedule && extraSchedule
+      ? baseSchedule.totalInterest - extraSchedule.totalInterest
+      : 0;
+  const periodsSaved =
+    hasExtra && baseSchedule && extraSchedule
+      ? baseSchedule.payoffPeriod - extraSchedule.payoffPeriod
+      : 0;
+  const monthsSaved = Math.round((periodsSaved / ppy) * 12);
 
-  const ptt        = calcPTT(price, firstTimeBuyer, newConstruction, foreignBuyer);
-  const gstInfo    = newConstruction ? calcGST(price, investmentProp) : null;
-  const foreignTax = foreignBuyer ? price * 0.2 : 0;
-  const totalClosing = ptt + (gstInfo?.net ?? 0) + foreignTax + 1_500 + 500 + 300;
-  const cashToClose  = downPayment + totalClosing;
+  const lttResult = calcLTT(
+    province,
+    price,
+    firstTimeBuyer,
+    newConstruction,
+    foreignBuyer,
+  );
+  const gstInfo = newConstruction ? calcGST(price, investmentProp) : null;
+  const totalClosing =
+    lttResult.tax +
+    lttResult.foreignTax +
+    (gstInfo?.net ?? 0) +
+    1_500 +
+    500 +
+    300;
+  const cashToClose = downPayment + totalClosing;
 
   const stressRate = Math.max(annRate + 0.02, 0.0525);
-  const stressPmt  = loan > 0 ? calcPayment(loan, stressRate, amort, payFreq) : 0;
+  const stressPmt =
+    loan > 0 ? calcPayment(loan, stressRate, amort, payFreq) : 0;
 
   const balanceChartData = useMemo(() => {
     if (!baseSchedule) return [];
@@ -152,7 +216,7 @@ export default function MortgageCalculator({
     if (!baseSchedule) return [];
     return baseSchedule.yearRows.map((yr) => ({
       year: `Yr ${yr.year}`,
-      Interest:  Math.round(yr.interest),
+      Interest: Math.round(yr.interest),
       Principal: Math.round(yr.principal),
     }));
   }, [baseSchedule]);
@@ -162,7 +226,11 @@ export default function MortgageCalculator({
   // ── Handlers ─────────────────────────────────────────────────────────────
   function numericHandler(set: (v: string) => void) {
     return (e: React.ChangeEvent<HTMLInputElement>) =>
-      set(fmtCommas(e.target.value.replace(/[^0-9.]/g, "").replace(/(\..*)\./g, "$1")));
+      set(
+        fmtCommas(
+          e.target.value.replace(/[^0-9.]/g, "").replace(/(\..*)\./g, "$1"),
+        ),
+      );
   }
 
   function toggleDpMode() {
@@ -177,13 +245,13 @@ export default function MortgageCalculator({
 
   // ── Utility fields ────────────────────────────────────────────────────────
   const utilityFields: UtilField[] = [
-    ["Electricity",        elecRaw,      setElecRaw],
-    ["Natural Gas",        gasRaw,       setGasRaw],
-    ["Water / Sewer",      waterRaw,     setWaterRaw],
-    ["Internet",           internetRaw,  setInternetRaw],
-    ["Phone",              phoneRaw,     setPhoneRaw],
-    ["Home Insurance",     insuranceRaw, setInsuranceRaw],
-    ["Garbage / Recycling", garbageRaw,  setGarbageRaw],
+    ["Electricity", elecRaw, setElecRaw],
+    ["Natural Gas", gasRaw, setGasRaw],
+    ["Water / Sewer", waterRaw, setWaterRaw],
+    ["Internet", internetRaw, setInternetRaw],
+    ["Phone", phoneRaw, setPhoneRaw],
+    ["Home Insurance", insuranceRaw, setInsuranceRaw],
+    ["Garbage / Recycling", garbageRaw, setGarbageRaw],
   ];
 
   // ── Render ────────────────────────────────────────────────────────────────
@@ -193,8 +261,22 @@ export default function MortgageCalculator({
       <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800">
         <h2 className="text-base font-bold text-slate-100 mb-4">
           🏠 Mortgage Calculator
-          <span className="ml-2 text-xs font-normal text-slate-500">BC, Canada</span>
+          <span className="ml-2 text-xs font-normal text-slate-500">
+            {PROVINCES.find((p) => p.code === province)?.name ?? province},
+            Canada
+          </span>
         </h2>
+
+        {/* Province selector */}
+        <div className="mb-4">
+          <label className={labelCls}>Province / Territory</label>
+          <div className="px-3 py-2 rounded-lg bg-slate-800/50 border border-slate-700/50 text-sm text-slate-300">
+            {PROVINCES.find((p) => p.code === province)?.name ?? province}
+            <span className="ml-2 text-xs text-slate-500">
+              — change in the header selector
+            </span>
+          </div>
+        </div>
 
         {/* Core fields */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -202,7 +284,9 @@ export default function MortgageCalculator({
           <div>
             <label className={labelCls}>Property Price</label>
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none">$</span>
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none">
+                $
+              </span>
               <input
                 className={`${inputCls} pl-6`}
                 value={priceRaw}
@@ -244,7 +328,9 @@ export default function MortgageCalculator({
               </button>
             </div>
             {dpError && (
-              <p className="text-xs text-red-400 mt-1">Minimum down payment is {fmt(dpMin)}</p>
+              <p className="text-xs text-red-400 mt-1">
+                Minimum down payment is {fmt(dpMin)}
+              </p>
             )}
           </div>
 
@@ -261,7 +347,12 @@ export default function MortgageCalculator({
               }}
             >
               {MORTGAGE_TYPES.map((t) => (
-                <option key={t.id} value={t.id}>{t.label}</option>
+                <option
+                  key={t.id}
+                  value={t.id}
+                >
+                  {t.label}
+                </option>
               ))}
             </select>
           </div>
@@ -280,16 +371,27 @@ export default function MortgageCalculator({
                 inputMode="decimal"
                 placeholder="4.5"
               />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none">%</span>
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none">
+                %
+              </span>
             </div>
           </div>
 
           {/* Amortization */}
           <div>
             <label className={labelCls}>Amortization Period</label>
-            <select className={inputCls} value={amort} onChange={(e) => setAmort(Number(e.target.value))}>
+            <select
+              className={inputCls}
+              value={amort}
+              onChange={(e) => setAmort(Number(e.target.value))}
+            >
               {[5, 10, 15, 20, 25, 30].map((y) => (
-                <option key={y} value={y}>{y} years</option>
+                <option
+                  key={y}
+                  value={y}
+                >
+                  {y} years
+                </option>
               ))}
             </select>
           </div>
@@ -297,7 +399,11 @@ export default function MortgageCalculator({
           {/* Payment frequency */}
           <div>
             <label className={labelCls}>Payment Frequency</label>
-            <select className={inputCls} value={payFreq} onChange={(e) => setPayFreq(e.target.value as PayFreq)}>
+            <select
+              className={inputCls}
+              value={payFreq}
+              onChange={(e) => setPayFreq(e.target.value as PayFreq)}
+            >
               <option value="monthly">Monthly</option>
               <option value="semi-monthly">Semi-Monthly</option>
               <option value="bi-weekly">Bi-Weekly</option>
@@ -308,7 +414,9 @@ export default function MortgageCalculator({
 
         {/* ── Strata & Roommate ── */}
         <div className="mt-4 pt-4 border-t border-slate-800">
-          <p className="text-xs text-slate-400 mb-3">Property Costs &amp; Offsets</p>
+          <p className="text-xs text-slate-400 mb-3">
+            Property Costs &amp; Offsets
+          </p>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className={labelCls}>
@@ -316,7 +424,9 @@ export default function MortgageCalculator({
                 <span className="text-slate-600">(monthly)</span>
               </label>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none">$</span>
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none">
+                  $
+                </span>
                 <input
                   className={`${inputCls} pl-6`}
                   value={strataRaw}
@@ -332,7 +442,9 @@ export default function MortgageCalculator({
                 <span className="text-slate-600">(monthly, optional)</span>
               </label>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none">$</span>
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none">
+                  $
+                </span>
                 <input
                   className={`${inputCls} pl-6`}
                   value={roommateRaw}
@@ -349,14 +461,18 @@ export default function MortgageCalculator({
         <div className="mt-4 pt-4 border-t border-slate-800">
           <p className="text-xs text-slate-400 mb-3">
             Monthly Utilities{" "}
-            <span className="text-slate-600">(optional — included in affordability)</span>
+            <span className="text-slate-600">
+              (optional — included in affordability)
+            </span>
           </p>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {utilityFields.map(([lbl, val, set]) => (
               <div key={lbl}>
                 <label className={labelCls}>{lbl}</label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none">$</span>
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none">
+                    $
+                  </span>
                   <input
                     className={`${inputCls} pl-6`}
                     value={val}
@@ -381,7 +497,9 @@ export default function MortgageCalculator({
               <div>
                 <label className={labelCls}>Amount</label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none">$</span>
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none">
+                    $
+                  </span>
                   <input
                     className={`${inputCls} pl-6`}
                     value={extraRaw}
@@ -393,7 +511,11 @@ export default function MortgageCalculator({
               </div>
               <div>
                 <label className={labelCls}>Frequency</label>
-                <select className={inputCls} value={extraFreq} onChange={(e) => setExtraFreq(e.target.value as LumpFreq)}>
+                <select
+                  className={inputCls}
+                  value={extraFreq}
+                  onChange={(e) => setExtraFreq(e.target.value as LumpFreq)}
+                >
                   <option value="once">Once</option>
                   <option value="annually">Annually</option>
                   <option value="semi-annually">Semi-Annually</option>
@@ -411,7 +533,9 @@ export default function MortgageCalculator({
               <div>
                 <label className={labelCls}>Increase payment by</label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none">$</span>
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none">
+                    $
+                  </span>
                   <input
                     className={`${inputCls} pl-6`}
                     value={payIncrRaw}
@@ -423,7 +547,11 @@ export default function MortgageCalculator({
               </div>
               <div>
                 <label className={labelCls}>Frequency</label>
-                <select className={inputCls} value={payIncrFreq} onChange={(e) => setPayIncrFreq(e.target.value as LumpFreq)}>
+                <select
+                  className={inputCls}
+                  value={payIncrFreq}
+                  onChange={(e) => setPayIncrFreq(e.target.value as LumpFreq)}
+                >
                   <option value="once">Once</option>
                   <option value="annually">Annually</option>
                   <option value="semi-annually">Semi-Annually</option>
@@ -437,28 +565,51 @@ export default function MortgageCalculator({
         <div className="mt-4 pt-4 border-t border-slate-800 grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Check
             checked={firstTimeBuyer}
-            onChange={(v) => { setFTB(v); if (v) setInvestment(false); }}
+            onChange={(v) => {
+              setFTB(v);
+              if (v) setInvestment(false);
+            }}
           >
             First-time home buyer
             <span className="block text-xs text-slate-500">
-              Must be Canadian citizen/PR · exempt on first $500k if price ≤$835k · partial $835k–$860k
+              Must be Canadian citizen/PR · {ftbNote(province)}
             </span>
           </Check>
-          <Check checked={newConstruction} onChange={setNewConstr}>
+          <Check
+            checked={newConstruction}
+            onChange={setNewConstr}
+          >
             New construction / newly built
-            <span className="block text-xs text-slate-500">PTT exempt ≤$1.1M · 5% GST applies</span>
+            <span className="block text-xs text-slate-500">
+              5% GST applies
+              {province === "BC"
+                ? " · PTT exempt ≤$1.1M (principal residence)"
+                : ""}
+            </span>
           </Check>
           <Check
             checked={investmentProp}
-            onChange={(v) => { setInvestment(v); if (v) setFTB(false); }}
+            onChange={(v) => {
+              setInvestment(v);
+              if (v) setFTB(false);
+            }}
           >
             Investment / rental property
-            <span className="block text-xs text-slate-500">No GST rebate · no PTT exemptions</span>
+            <span className="block text-xs text-slate-500">
+              No GST rebate · no land transfer tax exemptions
+            </span>
           </Check>
-          <Check checked={foreignBuyer} onChange={setForeign}>
-            Foreign buyer
-            <span className="block text-xs text-slate-500">+20% Additional Property Transfer Tax</span>
-          </Check>
+          {hasForeignBuyerTax(province) && (
+            <Check
+              checked={foreignBuyer}
+              onChange={setForeign}
+            >
+              Foreign buyer
+              <span className="block text-xs text-slate-500">
+                +20% Additional Property Transfer Tax (BC)
+              </span>
+            </Check>
+          )}
         </div>
       </div>
 
@@ -516,14 +667,9 @@ export default function MortgageCalculator({
 
           {activeSection === "costs" && (
             <CostsTab
-              price={price}
-              newConstruction={newConstruction}
-              firstTimeBuyer={firstTimeBuyer}
-              foreignBuyer={foreignBuyer}
-              investmentProp={investmentProp}
-              ptt={ptt}
+              province={province}
+              lttResult={lttResult}
               gstInfo={gstInfo}
-              foreignTax={foreignTax}
               totalClosing={totalClosing}
               downPayment={downPayment}
               cashToClose={cashToClose}

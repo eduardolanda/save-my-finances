@@ -36,6 +36,10 @@ export interface FlowEntry {
   endDate?: string;
   /** Expense category tag (optional) */
   category?: string;
+  /** Income only — true when the amount entered is gross (before tax) */
+  isGross?: boolean;
+  /** Income only — when true, projections subtract estimated effective tax rate from this flow */
+  deductTax?: boolean;
   createdAt: number;
   updatedAt: number;
 }

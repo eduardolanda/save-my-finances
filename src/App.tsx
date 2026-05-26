@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useCallback, useRef } from "react";
+import { PROVINCES, type ProvinceCode } from "./components/mortgage/provinces";
 
 import { useRegisterSW } from "virtual:pwa-register/react";
 import logo from "./assets/logo.png";
@@ -13,6 +14,7 @@ import { exportData, importData } from "./dataIO";
 import { convert, formatMoney } from "./currency";
 import { type SavingEntry } from "./db";
 import { monthlyAmount } from "./components/IncomeExpenses";
+import { calcTax, ZERO_DEDUCTIONS } from "./components/income/taxes";
 import SavingCard from "./components/SavingCard";
 import SavingForm from "./components/SavingForm";
 import CurrencySelector from "./components/CurrencySelector";
@@ -70,6 +72,7 @@ export default function App() {
         .reduce((s, f) => s + monthlyAmount(f, primary, rates), 0),
     [flows, primary, rates],
   );
+
   const monthlyExpenses = useMemo(
     () =>
       flows
@@ -153,6 +156,35 @@ export default function App() {
     localStorage.setItem("vq-theme", isDark ? "dark" : "light");
   }, [isDark]);
 
+  // ── Province ────────────────────────────────────────────────────
+  const [province, setProvince] = useState<ProvinceCode>(() => {
+    return (localStorage.getItem("vq-province") as ProvinceCode) ?? "BC";
+  });
+  useEffect(() => {
+    localStorage.setItem("vq-province", province);
+  }, [province]);
+
+  const effectiveTaxRate = useMemo(() => {
+    const annualGross = monthlyIncome * 12;
+    if (
+      annualGross <= 0 ||
+      !flows.some((f) => f.kind === "income" && f.deductTax)
+    )
+      return 0;
+    return calcTax(annualGross, province, ZERO_DEDUCTIONS).effectiveRate;
+  }, [monthlyIncome, flows, province]);
+
+  const monthlyIncomeNet = useMemo(
+    () =>
+      flows
+        .filter((f) => f.kind === "income")
+        .reduce(
+          (s, f) => s + monthlyAmount(f, primary, rates, effectiveTaxRate),
+          0,
+        ),
+    [flows, primary, rates, effectiveTaxRate],
+  );
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
       {/* ── Header + Tab bar (sticky together) ── */}
@@ -177,6 +209,22 @@ export default function App() {
               current={primary}
               onChange={setPrimary}
             />
+            {/* Province selector — compact, shows code only */}
+            <select
+              value={province}
+              onChange={(e) => setProvince(e.target.value as ProvinceCode)}
+              title="Select your province / territory"
+              className="px-2 py-1.5 rounded-lg bg-slate-800 border border-slate-700 hover:border-indigo-500 text-slate-200 text-sm font-semibold transition outline-none focus:border-indigo-500 cursor-pointer"
+            >
+              {PROVINCES.map((p) => (
+                <option
+                  key={p.code}
+                  value={p.code}
+                >
+                  {p.code}
+                </option>
+              ))}
+            </select>
             <button
               onClick={toggleTheme}
               title={isDark ? "Switch to light mode" : "Switch to dark mode"}
@@ -242,7 +290,7 @@ export default function App() {
             primaryCurrency={primary}
             rates={rates}
             totalSavings={totalInPrimary}
-            monthlyIncome={monthlyIncome}
+            monthlyIncome={monthlyIncomeNet}
             monthlyExpenses={monthlyExpenses}
             navigate={(tab) => navigate(tab as Tab)}
           />
@@ -390,6 +438,7 @@ export default function App() {
             primaryCurrency={primary}
             rates={rates}
             totalSavings={totalInPrimary}
+            province={province}
           />
         )}
 
@@ -459,7 +508,7 @@ export default function App() {
                     className={`relative w-12 h-6 rounded-full transition-colors shrink-0 ${isDark ? "bg-indigo-600" : "bg-slate-400"}`}
                   >
                     <span
-                      className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-transform ${isDark ? "translate-x-7" : "translate-x-1"}`}
+                      className={`absolute top-1 left-0 w-4 h-4 rounded-full bg-white shadow transition-transform ${isDark ? "translate-x-7" : "translate-x-1"}`}
                     />
                   </button>
                 </div>
@@ -531,8 +580,9 @@ export default function App() {
               </div>
             </div>
             <MortgageCalculator
-              monthlyIncome={monthlyIncome}
+              monthlyIncome={monthlyIncomeNet}
               monthlyExpenses={monthlyExpenses}
+              province={province}
             />
           </>
         )}

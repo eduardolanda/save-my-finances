@@ -16,6 +16,9 @@ import { useFlows, addFlow, updateFlow, deleteFlow } from "../hooks";
 import { convert, formatMoney, type FxRates } from "../currency";
 import { type FlowEntry, type FlowFrequency } from "../db";
 import CurrencySelector from "./CurrencySelector";
+import TaxPanel from "./income/TaxPanel";
+import type { ProvinceCode } from "./mortgage/provinces";
+import { calcTax, ZERO_DEDUCTIONS } from "./income/taxes";
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 const today = () => new Date().toISOString().slice(0, 10);
@@ -58,10 +61,15 @@ export function monthlyAmount(
   f: FlowEntry,
   target: string,
   rates: FxRates | null,
+  effectiveTaxRate = 0,
 ): number {
   const base = rates ? convert(f.amount, f.currency, target, rates) : f.amount;
   if (!f.recurrent || f.frequency === "once") return 0;
-  return base / FREQ_MONTHS[f.frequency];
+  const mo = base / FREQ_MONTHS[f.frequency];
+  if (f.kind === "income" && f.isGross && f.deductTax && effectiveTaxRate > 0) {
+    return mo * (1 - effectiveTaxRate);
+  }
+  return mo;
 }
 
 /** Returns the occurrence dates of a flow within [startMs, endMs] */
@@ -98,6 +106,7 @@ function buildProjection(
   horizonMonths: number,
   target: string,
   rates: FxRates | null,
+  effectiveTaxRate = 0,
 ) {
   const now = new Date();
   const rows: {
@@ -119,8 +128,12 @@ function buildProjection(
     for (const f of flows) {
       const occ = occurrences(f, mStart, mEnd);
       const cv = rates ? convert(1, f.currency, target, rates) : 1;
+      const netFactor =
+        f.kind === "income" && f.isGross && f.deductTax && effectiveTaxRate > 0
+          ? 1 - effectiveTaxRate
+          : 1;
       for (const o of occ) {
-        if (f.kind === "income") income += Math.abs(o.amount) * cv;
+        if (f.kind === "income") income += Math.abs(o.amount) * cv * netFactor;
         else expenses += Math.abs(o.amount) * cv;
       }
     }
@@ -194,6 +207,8 @@ function FlowForm({
   const [startDate, setStartDate] = useState(initial?.startDate ?? today());
   const [endDate, setEndDate] = useState(initial?.endDate ?? "");
   const [category, setCategory] = useState(initial?.category ?? "Other");
+  const [isGross, setIsGross] = useState(initial?.isGross ?? false);
+  const [deductTax, setDeductTax] = useState(initial?.deductTax ?? false);
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -209,6 +224,8 @@ function FlowForm({
       startDate,
       endDate: endDate || undefined,
       category: kind === "expense" ? category : undefined,
+      isGross: kind === "income" ? isGross : undefined,
+      deductTax: kind === "income" ? isGross && deductTax : undefined,
     });
   }
 
@@ -318,6 +335,45 @@ function FlowForm({
             />
           </div>
         )}
+        {kind === "income" && (
+          <div className="col-span-2 flex flex-col gap-2.5 pt-3 border-t border-slate-800">
+            <label className="flex items-center gap-2 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={isGross}
+                onChange={(e) => {
+                  setIsGross(e.target.checked);
+                  if (!e.target.checked) setDeductTax(false);
+                }}
+                className="accent-amber-500 w-4 h-4 shrink-0"
+              />
+              <span className="text-sm text-slate-300">
+                Gross income
+                <span className="block text-xs text-slate-500">
+                  Amount entered is before income tax (e.g. your salary before
+                  deductions)
+                </span>
+              </span>
+            </label>
+            {isGross && (
+              <label className="flex items-center gap-2 cursor-pointer select-none ml-6">
+                <input
+                  type="checkbox"
+                  checked={deductTax}
+                  onChange={(e) => setDeductTax(e.target.checked)}
+                  className="accent-indigo-500 w-4 h-4 shrink-0"
+                />
+                <span className="text-sm text-slate-300">
+                  Deduct estimated taxes in projections
+                  <span className="block text-xs text-slate-500">
+                    Projections will use estimated after-tax amount based on
+                    your province &amp; income
+                  </span>
+                </span>
+              </label>
+            )}
+          </div>
+        )}
       </div>
       <div className="flex gap-2 justify-end pt-1">
         <button
@@ -343,14 +399,26 @@ function FlowRow({
   flow,
   primary,
   rates,
+  effectiveTaxRate = 0,
 }: {
   flow: FlowEntry;
   primary: string;
   rates: FxRates | null;
+  effectiveTaxRate?: number;
 }) {
   const [editing, setEditing] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const monthly = monthlyAmount(flow, primary, rates);
+
+  // After-tax figures — only when gross+deductTax and we have a rate
+  const showTaxBreakdown =
+    flow.kind === "income" &&
+    flow.isGross &&
+    flow.deductTax &&
+    effectiveTaxRate > 0 &&
+    monthly > 0;
+  const monthlyNet = showTaxBreakdown ? monthly * (1 - effectiveTaxRate) : null;
+  const monthlyTax = showTaxBreakdown ? monthly - (monthlyNet ?? 0) : null;
 
   async function handleSave(
     data: Omit<FlowEntry, "id" | "createdAt" | "updatedAt">,
@@ -391,22 +459,50 @@ function FlowRow({
               {flow.category}
             </span>
           )}
+          {flow.kind === "income" && flow.isGross && (
+            <span className="text-xs px-1.5 py-0.5 rounded bg-amber-900/40 text-amber-400 shrink-0">
+              Gross
+            </span>
+          )}
+          {flow.kind === "income" && flow.deductTax && (
+            <span className="text-xs px-1.5 py-0.5 rounded bg-indigo-900/40 text-indigo-400 shrink-0">
+              −tax
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-2 mt-0.5">
           <span className={`text-xs ${kindColor}`}>
             {fmtAmt(flow.amount, flow.currency)}
+            {flow.isGross && (
+              <span className="ml-1 text-slate-600">(gross)</span>
+            )}
           </span>
           <span className="text-xs text-slate-600">·</span>
           <span className="text-xs text-slate-500">{freqLabel}</span>
           {flow.recurrent && monthly > 0 && (
             <>
               <span className="text-xs text-slate-600">·</span>
-              <span className={`text-xs ${kindColor} font-medium`}>
+              <span className={`text-xs ${kindColor} font-medium tabular-nums`}>
                 {fmtAmt(monthly, primary)}/mo
               </span>
             </>
           )}
         </div>
+        {showTaxBreakdown && monthlyNet !== null && monthlyTax !== null && (
+          <div className="flex items-center gap-2 mt-1 flex-wrap">
+            <span className="text-xs text-emerald-300 font-semibold tabular-nums">
+              ~{fmtAmt(monthlyNet, primary)}/mo after tax
+            </span>
+            <span className="text-xs text-slate-600">·</span>
+            <span className="text-xs text-rose-400 tabular-nums">
+              −{fmtAmt(monthlyTax, primary)}/mo tax
+            </span>
+            <span className="text-xs text-slate-600">·</span>
+            <span className="text-xs text-slate-500">
+              −{fmtAmt(monthlyTax * 12, primary)}/yr
+            </span>
+          </div>
+        )}
       </div>
       <div
         className="flex items-center gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition"
@@ -454,20 +550,22 @@ interface Props {
   primaryCurrency: string;
   rates: FxRates | null;
   totalSavings: number;
+  province: ProvinceCode;
 }
 
 export default function IncomeExpenses({
   primaryCurrency,
   rates,
   totalSavings,
+  province,
 }: Props) {
   const flows = useFlows();
   const incomes = flows.filter((f) => f.kind === "income");
   const expenses = flows.filter((f) => f.kind === "expense");
 
-  const [activeSection, setActiveSection] = useState<"flows" | "projections">(
-    "flows",
-  );
+  const [activeSection, setActiveSection] = useState<
+    "flows" | "projections" | "taxes"
+  >("flows");
   const [showAddIncome, setShowAddIncome] = useState(false);
   const [showAddExpense, setShowAddExpense] = useState(false);
   const [horizonMonths, setHorizonMonths] = useState(12);
@@ -491,6 +589,16 @@ export default function IncomeExpenses({
       incomes.reduce((s, f) => s + monthlyAmount(f, primaryCurrency, rates), 0),
     [incomes, primaryCurrency, rates],
   );
+
+  // Only gross-flagged flows (for Tax panel pre-fill reset target)
+  const monthlyGrossOnly = useMemo(
+    () =>
+      incomes
+        .filter((f) => f.isGross)
+        .reduce((s, f) => s + monthlyAmount(f, primaryCurrency, rates), 0),
+    [incomes, primaryCurrency, rates],
+  );
+
   const monthlyExpenses = useMemo(
     () =>
       expenses.reduce(
@@ -499,7 +607,27 @@ export default function IncomeExpenses({
       ),
     [expenses, primaryCurrency, rates],
   );
-  const monthlyNet = monthlyIncome - monthlyExpenses;
+
+  // Effective tax rate — based on all gross income flows
+  const effectiveTaxRate = useMemo(() => {
+    const annualGross = monthlyIncome * 12;
+    if (annualGross <= 0 || !incomes.some((f) => f.deductTax)) return 0;
+    return calcTax(annualGross, province, ZERO_DEDUCTIONS).effectiveRate;
+  }, [monthlyIncome, incomes, province]);
+
+  // After-tax monthly income (for projections + net card)
+  const monthlyIncomeNet = useMemo(
+    () =>
+      incomes.reduce(
+        (s, f) =>
+          s + monthlyAmount(f, primaryCurrency, rates, effectiveTaxRate),
+        0,
+      ),
+    [incomes, primaryCurrency, rates, effectiveTaxRate],
+  );
+
+  const hasDeductTax = incomes.some((f) => f.deductTax);
+  const monthlyNet = monthlyIncomeNet - monthlyExpenses;
 
   const projection = useMemo(
     () =>
@@ -509,8 +637,16 @@ export default function IncomeExpenses({
         effectiveHorizon,
         primaryCurrency,
         rates,
+        effectiveTaxRate,
       ),
-    [flows, totalSavings, effectiveHorizon, primaryCurrency, rates],
+    [
+      flows,
+      totalSavings,
+      effectiveHorizon,
+      primaryCurrency,
+      rates,
+      effectiveTaxRate,
+    ],
   );
 
   const finalBalance =
@@ -541,6 +677,7 @@ export default function IncomeExpenses({
 
   const SECTIONS = [
     { id: "flows", label: "💸 Flows" },
+    { id: "taxes", label: "🧾 Taxes" },
     { id: "projections", label: "📈 Projections" },
   ] as const;
 
@@ -555,9 +692,15 @@ export default function IncomeExpenses({
           <p className="text-xl font-bold text-emerald-400 tabular-nums">
             {fmt(monthlyIncome)}
           </p>
-          <p className="text-xs text-slate-500 mt-0.5">
-            {incomes.length} source{incomes.length !== 1 ? "s" : ""}
-          </p>
+          {hasDeductTax ? (
+            <p className="text-xs text-amber-400 mt-0.5 tabular-nums">
+              ~{fmt(monthlyIncomeNet)} after est. tax
+            </p>
+          ) : (
+            <p className="text-xs text-slate-500 mt-0.5">
+              {incomes.length} source{incomes.length !== 1 ? "s" : ""}
+            </p>
+          )}
         </div>
         <div className="p-4 rounded-2xl bg-rose-900/25 border border-rose-800/50">
           <p className="text-xs text-rose-400 uppercase tracking-widest mb-1">
@@ -652,6 +795,7 @@ export default function IncomeExpenses({
                     flow={f}
                     primary={primaryCurrency}
                     rates={rates}
+                    effectiveTaxRate={effectiveTaxRate}
                   />
                 ))}
               </div>
@@ -718,6 +862,15 @@ export default function IncomeExpenses({
             )}
           </section>
         </div>
+      )}
+
+      {/* ── TAXES ── */}
+      {activeSection === "taxes" && (
+        <TaxPanel
+          province={province}
+          monthlyGross={monthlyIncome}
+          monthlyGrossFlows={monthlyGrossOnly || monthlyIncome}
+        />
       )}
 
       {/* ── PROJECTIONS ── */}
