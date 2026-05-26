@@ -144,8 +144,10 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
+      {/* ── Header + Tab bar (sticky together) ── */}
+      <div className="sticky top-0 z-40">
       {/* ── Header ── */}
-      <header className="sticky top-0 z-40 bg-slate-950/90 backdrop-blur border-b border-slate-800 px-4 py-3 flex items-center justify-between gap-3">
+      <header className="bg-slate-950/90 backdrop-blur border-b border-slate-800 px-4 py-3 flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <span className="text-xl font-bold tracking-tight">
             💰 Save My Finances
@@ -222,6 +224,7 @@ export default function App() {
           </button>
         ))}
       </nav>
+      </div>
 
       <main className="flex-1 px-4 py-6 max-w-5xl mx-auto w-full">
         {/* ── PWA install prompt ── */}
