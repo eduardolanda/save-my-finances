@@ -53,12 +53,7 @@ export default function App() {
   const savings = useSavings();
   const flows = useFlows();
   const { primary, setPrimary } = usePrimaryCurrency();
-  const {
-    rates,
-    loading: ratesLoading,
-    offline,
-    refresh,
-  } = useFxRates(primary);
+  const { rates, loading: ratesLoading, offline } = useFxRates(primary);
 
   const monthlyIncome = useMemo(
     () =>
