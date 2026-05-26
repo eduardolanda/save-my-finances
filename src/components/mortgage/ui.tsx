@@ -5,13 +5,13 @@ export const inputCls =
 export const labelCls = "block text-xs text-slate-400 mb-1";
 
 export const tooltipStyle = {
-  backgroundColor: "#1e293b",
-  border: "1px solid #334155",
+  backgroundColor: "var(--vq-raised)",
+  border: "1px solid var(--vq-muted)",
   borderRadius: 10,
-  color: "#f1f5f9",
+  color: "var(--vq-t1)",
   fontSize: 12,
 };
-export const axisStyle = { fontSize: 11, fill: "#64748b" };
+export const axisStyle = { fontSize: 11, fill: "var(--vq-t4)" };
 
 type CardColor = "default" | "indigo" | "emerald" | "amber" | "red";
 

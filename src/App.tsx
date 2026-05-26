@@ -135,6 +135,17 @@ export default function App() {
 
   const { updateServiceWorker } = useRegisterSW();
 
+  // ── Theme ──────────────────────────────────────────────────────
+  const [isDark, setIsDark] = useState(() => {
+    const stored = localStorage.getItem('vq-theme');
+    return stored ? stored === 'dark' : true; // default dark for continuity
+  });
+  const toggleTheme = () => setIsDark((d) => !d);
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', isDark);
+    localStorage.setItem('vq-theme', isDark ? 'dark' : 'light');
+  }, [isDark]);
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
       {/* ── Header + Tab bar (sticky together) ── */}
@@ -152,6 +163,13 @@ export default function App() {
         </div>
         <div className="flex items-center gap-2">
           <CurrencySelector current={primary} onChange={setPrimary} />
+          <button
+            onClick={toggleTheme}
+            title={isDark ? "Switch to light mode" : "Switch to dark mode"}
+            className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 transition text-base leading-none"
+          >
+            {isDark ? "☀️" : "🌙"}
+          </button>
           {activeTab === "savings" && (
             <button
               onClick={() => setShowAdd(true)}
@@ -396,6 +414,25 @@ export default function App() {
                     <p className="text-xs font-normal text-slate-500">Restore from a previously exported backup (replaces current data)</p>
                   </div>
                 </button>
+              </div>
+
+              <div className="flex flex-col gap-2 pt-2 border-t border-slate-800">
+                <p className="text-xs text-slate-400 uppercase tracking-widest">Appearance</p>
+                <div className="flex items-center justify-between px-4 py-2.5 rounded-lg bg-slate-800">
+                  <div>
+                    <p className="text-sm font-semibold text-slate-200">{isDark ? "Dark mode" : "Light mode"}</p>
+                    <p className="text-xs font-normal text-slate-500">Toggle light / dark theme</p>
+                  </div>
+                  <button
+                    onClick={toggleTheme}
+                    aria-label="Toggle theme"
+                    className={`relative w-12 h-6 rounded-full transition-colors shrink-0 ${isDark ? "bg-indigo-600" : "bg-slate-400"}`}
+                  >
+                    <span
+                      className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-transform ${isDark ? "translate-x-7" : "translate-x-1"}`}
+                    />
+                  </button>
+                </div>
               </div>
 
               <div className="flex flex-col gap-2 pt-2 border-t border-slate-800">
