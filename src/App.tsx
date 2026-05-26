@@ -236,308 +236,306 @@ export default function App() {
         </div>
 
         {/* ── Dashboard tab ── */}
-          {activeTab === "dashboard" && (
-            <Dashboard
-                savings={savings}
-                primaryCurrency={primary}
-                rates={rates}
-                totalSavings={totalInPrimary}
-                monthlyIncome={monthlyIncome}
-                monthlyExpenses={monthlyExpenses}
-                navigate={(tab) => navigate(tab as Tab)}
-              />
-          )}
+        {activeTab === "dashboard" && (
+          <Dashboard
+            savings={savings}
+            primaryCurrency={primary}
+            rates={rates}
+            totalSavings={totalInPrimary}
+            monthlyIncome={monthlyIncome}
+            monthlyExpenses={monthlyExpenses}
+            navigate={(tab) => navigate(tab as Tab)}
+          />
+        )}
 
-          {/* ── Savings tab ── */}
-          {activeTab === "savings" && (
-            <>
-                {/* Total banner */}
-                <div className="mb-6 p-5 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between gap-4">
-                  <div>
-                    <p className="text-xs text-slate-400 uppercase tracking-widest mb-1">
-                      Total ({primary})
-                    </p>
-                    <p className="text-2xl sm:text-4xl font-bold text-slate-100 tabular-nums">
-                      {formatMoney(totalInPrimary, primary)}
-                    </p>
-                    {ratesLoading && (
-                      <p className="text-xs text-slate-500 mt-1">
-                        Updating exchange rates…
-                      </p>
-                    )}
-                  </div>
-                  <div className="hidden sm:flex flex-col gap-1 text-right">
-                    {(
-                      ["cash", "bank", "stocks", "rrsp"] as FilterCategory[]
-                    ).map((cat) => {
-                      const catTotal = savings
-                        .filter((s) => s.category === cat)
-                        .reduce(
-                          (sum, s) =>
-                            sum +
-                            (rates
-                              ? convert(s.amount, s.currency, primary, rates)
-                              : s.amount),
-                          0,
-                        );
-                      if (catTotal === 0) return null;
-                      return (
-                        <p
-                          key={cat}
-                          className="text-xs text-slate-400"
-                        >
-                          <span className="mr-1">{CATEGORY_ICON[cat]}</span>
-                          <span className="font-semibold text-slate-200 tabular-nums">
-                            {formatMoney(catTotal, primary)}
-                          </span>
-                          <span className="ml-1 text-slate-500">{cat}</span>
-                        </p>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* Category filter */}
-                <div className="flex gap-2 mb-6 flex-wrap">
-                  {FILTERS.map((f) => (
-                    <button
-                      key={f}
-                      onClick={() => setFilter(f)}
-                      className={`px-3 py-1.5 rounded-full text-xs font-semibold transition ${
-                        filter === f
-                          ? "bg-indigo-600 text-white"
-                          : "bg-slate-800 text-slate-300 hover:bg-slate-700"
-                      }`}
-                    >
-                      {f !== "all" && (
-                        <span className="mr-1">{CATEGORY_ICON[f]}</span>
-                      )}
-                      {f.toUpperCase()}
-                    </button>
-                  ))}
-                </div>
-
-                {/* Add form */}
-                {showAdd && (
-                  <div className="mb-6 p-5 rounded-2xl bg-slate-900 border border-slate-700">
-                    <p className="text-sm text-slate-400 mb-4">
-                      New saving entry
-                    </p>
-                    <SavingForm
-                      onSave={handleAdd}
-                      onCancel={() => setShowAdd(false)}
-                    />
-                  </div>
+        {/* ── Savings tab ── */}
+        {activeTab === "savings" && (
+          <>
+            {/* Total banner */}
+            <div className="mb-6 p-5 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between gap-4">
+              <div>
+                <p className="text-xs text-slate-400 uppercase tracking-widest mb-1">
+                  Total ({primary})
+                </p>
+                <p className="text-2xl sm:text-4xl font-bold text-slate-100 tabular-nums">
+                  {formatMoney(totalInPrimary, primary)}
+                </p>
+                {ratesLoading && (
+                  <p className="text-xs text-slate-500 mt-1">
+                    Updating exchange rates…
+                  </p>
                 )}
-
-                {/* Empty state */}
-                {filtered.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-24 gap-3 text-slate-500">
-                    <span className="text-5xl">🏦</span>
-                    <p className="text-lg">No savings yet</p>
-                    <button
-                      onClick={() => setShowAdd(true)}
-                      className="mt-2 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold transition"
-                    >
-                      Add your first entry
-                    </button>
-                  </div>
-                ) : (
-                  <div className="flex flex-col gap-8">
-                    {[...groups.entries()].map(([groupName, entries]) => {
-                      const groupTotal = entries.reduce(
-                        (sum, s) => sum + (amountById.get(s.id!) ?? 0),
+              </div>
+              <div className="hidden sm:flex flex-col gap-1 text-right">
+                {(["cash", "bank", "stocks", "rrsp"] as FilterCategory[]).map(
+                  (cat) => {
+                    const catTotal = savings
+                      .filter((s) => s.category === cat)
+                      .reduce(
+                        (sum, s) =>
+                          sum +
+                          (rates
+                            ? convert(s.amount, s.currency, primary, rates)
+                            : s.amount),
                         0,
                       );
-                      return (
-                        <section key={groupName}>
-                          <div className="flex items-center justify-between mb-3 pb-2 border-b border-slate-800">
-                            <div className="flex items-center gap-2">
-                              <span className="text-lg font-bold text-slate-100">
-                                {groupName}
-                              </span>
-                              <span className="text-xs text-slate-500">
-                                {entries.length}{" "}
-                                {entries.length === 1 ? "account" : "accounts"}
-                              </span>
-                            </div>
-                            <span className="text-sm font-semibold text-slate-300 tabular-nums">
-                              {formatMoney(groupTotal, primary)}
-                            </span>
-                          </div>
-                          <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-3 sm:gap-4">
-                            {entries.map((entry) => (
-                              <SavingCard
-                                key={entry.id}
-                                entry={entry}
-                                primaryCurrency={primary}
-                                rates={rates}
-                                weight={
-                                  (amountById.get(entry.id!) ?? 0) / maxAmount
-                                }
-                              />
-                            ))}
-                          </div>
-                        </section>
-                      );
-                    })}
-                  </div>
-                )}
-            </>
-          )}
-
-          {/* ── Income & Expenses tab ── */}
-          {activeTab === "income" && (
-            <IncomeExpenses
-                primaryCurrency={primary}
-                rates={rates}
-                totalSavings={totalInPrimary}
-              />
-          )}
-
-          {/* ── Settings tab ── */}
-          {activeTab === "settings" && (
-            <div className="flex flex-col gap-6 max-w-md">
-                <input
-                  ref={importInputRef}
-                  type="file"
-                  accept=".json,application/json"
-                  className="hidden"
-                  onChange={handleImport}
-                />
-                <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 flex flex-col gap-4">
-                  <h2 className="text-base font-bold text-slate-100">
-                    ⚙️ Settings
-                  </h2>
-
-                  <div className="flex flex-col gap-2">
-                    <p className="text-xs text-slate-400 uppercase tracking-widest">
-                      Data
-                    </p>
-                    <button
-                      onClick={() => exportData()}
-                      className="w-full px-4 py-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-semibold transition text-left flex items-center gap-3"
-                    >
-                      <span className="text-lg">📤</span>
-                      <div>
-                        <p>Export data</p>
-                        <p className="text-xs font-normal text-slate-500">
-                          Download a backup of all your savings, flows &amp;
-                          settings
-                        </p>
-                      </div>
-                    </button>
-                    <button
-                      onClick={() => importInputRef.current?.click()}
-                      className="w-full px-4 py-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-semibold transition text-left flex items-center gap-3"
-                    >
-                      <span className="text-lg">📥</span>
-                      <div>
-                        <p>Import data</p>
-                        <p className="text-xs font-normal text-slate-500">
-                          Restore from a previously exported backup (replaces
-                          current data)
-                        </p>
-                      </div>
-                    </button>
-                  </div>
-
-                  <div className="flex flex-col gap-2 pt-2 border-t border-slate-800">
-                    <p className="text-xs text-slate-400 uppercase tracking-widest">
-                      Appearance
-                    </p>
-                    <div className="flex items-center justify-between px-4 py-2.5 rounded-lg bg-slate-800">
-                      <div>
-                        <p className="text-sm font-semibold text-slate-200">
-                          {isDark ? "Dark mode" : "Light mode"}
-                        </p>
-                        <p className="text-xs font-normal text-slate-500">
-                          Toggle light / dark theme
-                        </p>
-                      </div>
-                      <button
-                        onClick={toggleTheme}
-                        aria-label="Toggle theme"
-                        className={`relative w-12 h-6 rounded-full transition-colors shrink-0 ${isDark ? "bg-indigo-600" : "bg-slate-400"}`}
+                    if (catTotal === 0) return null;
+                    return (
+                      <p
+                        key={cat}
+                        className="text-xs text-slate-400"
                       >
-                        <span
-                          className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-transform ${isDark ? "translate-x-7" : "translate-x-1"}`}
-                        />
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-col gap-2 pt-2 border-t border-slate-800">
-                    <p className="text-xs text-slate-400 uppercase tracking-widest">
-                      App
-                    </p>
-                    <button
-                      onClick={() => updateServiceWorker(true)}
-                      className="w-full px-4 py-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-semibold transition text-left flex items-center gap-3"
-                    >
-                      <span className="text-lg">↻</span>
-                      <div>
-                        <p>Force update</p>
-                        <p className="text-xs font-normal text-slate-500">
-                          The app updates automatically — tap this if something
-                          looks outdated
-                        </p>
-                      </div>
-                    </button>
-                  </div>
-                </div>
+                        <span className="mr-1">{CATEGORY_ICON[cat]}</span>
+                        <span className="font-semibold text-slate-200 tabular-nums">
+                          {formatMoney(catTotal, primary)}
+                        </span>
+                        <span className="ml-1 text-slate-500">{cat}</span>
+                      </p>
+                    );
+                  },
+                )}
+              </div>
             </div>
-          )}
 
-          {/* ── Mortgage tab ── */}
-          {activeTab === "mortgage" && (
-            <>
-                {/* Savings available banner */}
-                <div className="mb-5 p-4 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between gap-4">
-                  <div>
-                    <p className="text-xs text-slate-400 uppercase tracking-widest mb-0.5">
-                      Available Savings ({primary})
-                    </p>
-                    <p className="text-2xl font-bold text-emerald-300 tabular-nums">
-                      {formatMoney(totalInPrimary, primary)}
-                    </p>
-                  </div>
-                  <div className="hidden sm:flex flex-col gap-1 text-right">
-                    {(
-                      ["cash", "bank", "stocks", "rrsp"] as FilterCategory[]
-                    ).map((cat) => {
-                      const catTotal = savings
-                        .filter((s) => s.category === cat)
-                        .reduce(
-                          (sum, s) =>
-                            sum +
-                            (rates
-                              ? convert(s.amount, s.currency, primary, rates)
-                              : s.amount),
-                          0,
-                        );
-                      if (catTotal === 0) return null;
-                      return (
-                        <p
-                          key={cat}
-                          className="text-xs text-slate-400"
-                        >
-                          <span className="mr-1">{CATEGORY_ICON[cat]}</span>
-                          <span className="font-semibold text-slate-200 tabular-nums">
-                            {formatMoney(catTotal, primary)}
-                          </span>
-                          <span className="ml-1 text-slate-500">{cat}</span>
-                        </p>
-                      );
-                    })}
-                  </div>
-                </div>
-                <MortgageCalculator
-                  monthlyIncome={monthlyIncome}
-                  monthlyExpenses={monthlyExpenses}
+            {/* Category filter */}
+            <div className="flex gap-2 mb-6 flex-wrap">
+              {FILTERS.map((f) => (
+                <button
+                  key={f}
+                  onClick={() => setFilter(f)}
+                  className={`px-3 py-1.5 rounded-full text-xs font-semibold transition ${
+                    filter === f
+                      ? "bg-indigo-600 text-white"
+                      : "bg-slate-800 text-slate-300 hover:bg-slate-700"
+                  }`}
+                >
+                  {f !== "all" && (
+                    <span className="mr-1">{CATEGORY_ICON[f]}</span>
+                  )}
+                  {f.toUpperCase()}
+                </button>
+              ))}
+            </div>
+
+            {/* Add form */}
+            {showAdd && (
+              <div className="mb-6 p-5 rounded-2xl bg-slate-900 border border-slate-700">
+                <p className="text-sm text-slate-400 mb-4">New saving entry</p>
+                <SavingForm
+                  onSave={handleAdd}
+                  onCancel={() => setShowAdd(false)}
                 />
-            </>
-          )}
+              </div>
+            )}
+
+            {/* Empty state */}
+            {filtered.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-24 gap-3 text-slate-500">
+                <span className="text-5xl">🏦</span>
+                <p className="text-lg">No savings yet</p>
+                <button
+                  onClick={() => setShowAdd(true)}
+                  className="mt-2 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold transition"
+                >
+                  Add your first entry
+                </button>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-8">
+                {[...groups.entries()].map(([groupName, entries]) => {
+                  const groupTotal = entries.reduce(
+                    (sum, s) => sum + (amountById.get(s.id!) ?? 0),
+                    0,
+                  );
+                  return (
+                    <section key={groupName}>
+                      <div className="flex items-center justify-between mb-3 pb-2 border-b border-slate-800">
+                        <div className="flex items-center gap-2">
+                          <span className="text-lg font-bold text-slate-100">
+                            {groupName}
+                          </span>
+                          <span className="text-xs text-slate-500">
+                            {entries.length}{" "}
+                            {entries.length === 1 ? "account" : "accounts"}
+                          </span>
+                        </div>
+                        <span className="text-sm font-semibold text-slate-300 tabular-nums">
+                          {formatMoney(groupTotal, primary)}
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-3 sm:gap-4">
+                        {entries.map((entry) => (
+                          <SavingCard
+                            key={entry.id}
+                            entry={entry}
+                            primaryCurrency={primary}
+                            rates={rates}
+                            weight={
+                              (amountById.get(entry.id!) ?? 0) / maxAmount
+                            }
+                          />
+                        ))}
+                      </div>
+                    </section>
+                  );
+                })}
+              </div>
+            )}
+          </>
+        )}
+
+        {/* ── Income & Expenses tab ── */}
+        {activeTab === "income" && (
+          <IncomeExpenses
+            primaryCurrency={primary}
+            rates={rates}
+            totalSavings={totalInPrimary}
+          />
+        )}
+
+        {/* ── Settings tab ── */}
+        {activeTab === "settings" && (
+          <div className="flex flex-col gap-6 max-w-md">
+            <input
+              ref={importInputRef}
+              type="file"
+              accept=".json,application/json"
+              className="hidden"
+              onChange={handleImport}
+            />
+            <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 flex flex-col gap-4">
+              <h2 className="text-base font-bold text-slate-100">
+                ⚙️ Settings
+              </h2>
+
+              <div className="flex flex-col gap-2">
+                <p className="text-xs text-slate-400 uppercase tracking-widest">
+                  Data
+                </p>
+                <button
+                  onClick={() => exportData()}
+                  className="w-full px-4 py-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-semibold transition text-left flex items-center gap-3"
+                >
+                  <span className="text-lg">📤</span>
+                  <div>
+                    <p>Export data</p>
+                    <p className="text-xs font-normal text-slate-500">
+                      Download a backup of all your savings, flows &amp;
+                      settings
+                    </p>
+                  </div>
+                </button>
+                <button
+                  onClick={() => importInputRef.current?.click()}
+                  className="w-full px-4 py-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-semibold transition text-left flex items-center gap-3"
+                >
+                  <span className="text-lg">📥</span>
+                  <div>
+                    <p>Import data</p>
+                    <p className="text-xs font-normal text-slate-500">
+                      Restore from a previously exported backup (replaces
+                      current data)
+                    </p>
+                  </div>
+                </button>
+              </div>
+
+              <div className="flex flex-col gap-2 pt-2 border-t border-slate-800">
+                <p className="text-xs text-slate-400 uppercase tracking-widest">
+                  Appearance
+                </p>
+                <div className="flex items-center justify-between px-4 py-2.5 rounded-lg bg-slate-800">
+                  <div>
+                    <p className="text-sm font-semibold text-slate-200">
+                      {isDark ? "Dark mode" : "Light mode"}
+                    </p>
+                    <p className="text-xs font-normal text-slate-500">
+                      Toggle light / dark theme
+                    </p>
+                  </div>
+                  <button
+                    onClick={toggleTheme}
+                    aria-label="Toggle theme"
+                    className={`relative w-12 h-6 rounded-full transition-colors shrink-0 ${isDark ? "bg-indigo-600" : "bg-slate-400"}`}
+                  >
+                    <span
+                      className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-transform ${isDark ? "translate-x-7" : "translate-x-1"}`}
+                    />
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-2 pt-2 border-t border-slate-800">
+                <p className="text-xs text-slate-400 uppercase tracking-widest">
+                  App
+                </p>
+                <button
+                  onClick={() => updateServiceWorker(true)}
+                  className="w-full px-4 py-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-semibold transition text-left flex items-center gap-3"
+                >
+                  <span className="text-lg">↻</span>
+                  <div>
+                    <p>Force update</p>
+                    <p className="text-xs font-normal text-slate-500">
+                      The app updates automatically — tap this if something
+                      looks outdated
+                    </p>
+                  </div>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── Mortgage tab ── */}
+        {activeTab === "mortgage" && (
+          <>
+            {/* Savings available banner */}
+            <div className="mb-5 p-4 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between gap-4">
+              <div>
+                <p className="text-xs text-slate-400 uppercase tracking-widest mb-0.5">
+                  Available Savings ({primary})
+                </p>
+                <p className="text-2xl font-bold text-emerald-300 tabular-nums">
+                  {formatMoney(totalInPrimary, primary)}
+                </p>
+              </div>
+              <div className="hidden sm:flex flex-col gap-1 text-right">
+                {(["cash", "bank", "stocks", "rrsp"] as FilterCategory[]).map(
+                  (cat) => {
+                    const catTotal = savings
+                      .filter((s) => s.category === cat)
+                      .reduce(
+                        (sum, s) =>
+                          sum +
+                          (rates
+                            ? convert(s.amount, s.currency, primary, rates)
+                            : s.amount),
+                        0,
+                      );
+                    if (catTotal === 0) return null;
+                    return (
+                      <p
+                        key={cat}
+                        className="text-xs text-slate-400"
+                      >
+                        <span className="mr-1">{CATEGORY_ICON[cat]}</span>
+                        <span className="font-semibold text-slate-200 tabular-nums">
+                          {formatMoney(catTotal, primary)}
+                        </span>
+                        <span className="ml-1 text-slate-500">{cat}</span>
+                      </p>
+                    );
+                  },
+                )}
+              </div>
+            </div>
+            <MortgageCalculator
+              monthlyIncome={monthlyIncome}
+              monthlyExpenses={monthlyExpenses}
+            />
+          </>
+        )}
       </main>
 
       <footer className="text-center text-xs text-slate-700 py-4">

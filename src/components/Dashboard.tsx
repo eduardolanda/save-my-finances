@@ -314,10 +314,26 @@ export default function Dashboard({
       {/* ── Quick links ── */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: "+ Add Saving",     action: () => navigate("savings"),  icon: "💰" },
-          { label: "Plan Mortgage",    action: () => navigate("mortgage"), icon: "🏠" },
-          { label: "Track Income",     action: () => navigate("income"),   icon: "📥" },
-          { label: "View Projections", action: () => navigate("income"),   icon: "📈" },
+          {
+            label: "+ Add Saving",
+            action: () => navigate("savings"),
+            icon: "💰",
+          },
+          {
+            label: "Plan Mortgage",
+            action: () => navigate("mortgage"),
+            icon: "🏠",
+          },
+          {
+            label: "Track Income",
+            action: () => navigate("income"),
+            icon: "📥",
+          },
+          {
+            label: "View Projections",
+            action: () => navigate("income"),
+            icon: "📈",
+          },
         ].map(({ label, action, icon }) => (
           <button
             key={label}
