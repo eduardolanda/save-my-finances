@@ -7,7 +7,7 @@ import { fetchRates, type FxRates } from "./currency";
 
 export function useSavings() {
   const savings = useLiveQuery(
-    () => db.savings.orderBy("createdAt").toArray(),
+    () => db.savings.toArray().then((a) => a.sort((x, y) => x.createdAt - y.createdAt)),
     [],
   );
   return savings ?? [];
@@ -15,8 +15,8 @@ export function useSavings() {
 
 export function useGroups(): string[] {
   const groups = useLiveQuery(async () => {
-    const all = await db.savings.orderBy("group").uniqueKeys();
-    return all.filter((g) => typeof g === "string" && g !== "") as string[];
+    const all = await db.savings.toArray();
+    return [...new Set(all.map((s) => s.group).filter((g) => typeof g === "string" && g !== ""))].sort();
   }, []);
   return groups ?? [];
 }
@@ -42,7 +42,10 @@ export async function deleteSaving(id: number) {
 // ── Income / Expense flows ────────────────────────────────────────────────────
 
 export function useFlows() {
-  const flows = useLiveQuery(() => db.flows.orderBy("createdAt").toArray(), []);
+  const flows = useLiveQuery(
+    () => db.flows.toArray().then((a) => a.sort((x, y) => x.createdAt - y.createdAt)),
+    [],
+  );
   return flows ?? [];
 }
 
