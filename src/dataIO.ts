@@ -1,11 +1,14 @@
 import { db } from "./db";
 
+const PREF_KEYS = ["vq-province", "vq-tax-deductions", "vq-tax-grossOverride"] as const;
+
 export interface ExportData {
   version: 1;
   exportedAt: string;
   savings: object[];
   flows: object[];
   settings: object[];
+  preferences?: Record<string, string>;
 }
 
 /** Dumps all IndexedDB data (savings, flows, settings) to a JSON file download. */
@@ -16,12 +19,19 @@ export async function exportData(): Promise<void> {
     db.settings.toArray(),
   ]);
 
+  const preferences: Record<string, string> = {};
+  for (const key of PREF_KEYS) {
+    const v = localStorage.getItem(key);
+    if (v !== null) preferences[key] = v;
+  }
+
   const data: ExportData = {
     version: 1,
     exportedAt: new Date().toISOString(),
     savings,
     flows,
     settings,
+    preferences,
   };
 
   const blob = new Blob([JSON.stringify(data, null, 2)], {
@@ -64,4 +74,13 @@ export async function importData(file: File): Promise<void> {
     if (data.settings?.length)
       await db.settings.bulkAdd(strip(data.settings) as never[]);
   });
+
+  // Restore localStorage preferences
+  if (data.preferences) {
+    for (const key of PREF_KEYS) {
+      if (key in data.preferences) {
+        localStorage.setItem(key, data.preferences[key]);
+      }
+    }
+  }
 }
