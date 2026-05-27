@@ -6,28 +6,28 @@
 :root {
   color-scheme: light;
   /* Surfaces */
-  --vq-bg: #ffffff;
-  --vq-surface: #f2f4f7;
-  --vq-raised: #e8eaed;
-  --vq-muted: #d8dce1;
-  --vq-subtle: #c4c9d1;
+  --vq-bg: #f4f6f9;
+  --vq-surface: #ffffff;
+  --vq-raised: #e9ecf0;
+  --vq-muted: #d0d5dd;
+  --vq-subtle: #9aa3b0;
   /* Text */
-  --vq-t1: #13223a;
-  --vq-t2: #1f3250;
-  --vq-t3: #4b5563;
-  --vq-t4: #6b7280;
-  --vq-t5: #9ca3af;
-  --vq-t6: #c4c9d1;
+  --vq-t1: #0b1829;
+  --vq-t2: #1a2f4a;
+  --vq-t3: #344054;
+  --vq-t4: #4b5565;
+  --vq-t5: #6b7585;
+  --vq-t6: #9aa3b0;
   /* Brand accent */
-  --vq-acc-hi: #1d9a5b; /* high-contrast green for text on light bg */
+  --vq-acc-hi: #0f7a44; /* high-contrast green for text on light bg */
   /* Misc */
-  --vq-banner: #e8f8ef; /* install-prompt banner bg */
+  --vq-banner: #d4f0e4; /* install-prompt banner bg */
   /* Data colours */
-  --vq-green: #059669;
-  --vq-red: #dc2626;
-  --vq-blue: #2563eb;
-  --vq-amber: #d97706;
-  --vq-rose: #e11d48;
+  --vq-green: #0a6e3f;
+  --vq-red: #b91c1c;
+  --vq-blue: #1d4ed8;
+  --vq-amber: #b45309;
+  --vq-rose: #be123c;
 }
 
 /* Dark theme */
