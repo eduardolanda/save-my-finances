@@ -47,7 +47,17 @@ export async function exportData(): Promise<void> {
   URL.revokeObjectURL(url);
 }
 
-/** Reads a JSON export file and fully replaces all local data. */
+/** Wipes all IndexedDB tables and app localStorage keys. */
+export async function clearData(): Promise<void> {
+  await db.transaction("rw", [db.savings, db.flows, db.settings], async () => {
+    await db.savings.clear();
+    await db.flows.clear();
+    await db.settings.clear();
+  });
+  for (const key of PREF_KEYS) {
+    localStorage.removeItem(key);
+  }
+}
 export async function importData(file: File): Promise<void> {
   const text = await file.text();
   const data = JSON.parse(text) as ExportData;

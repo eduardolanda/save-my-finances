@@ -10,7 +10,7 @@ import {
   addSaving,
   useFlows,
 } from "./hooks";
-import { exportData, importData } from "./dataIO";
+import { exportData, importData, clearData } from "./dataIO";
 import { convert, formatMoney } from "./currency";
 import { type SavingEntry } from "./db";
 import { monthlyAmount } from "./components/IncomeExpenses";
@@ -80,6 +80,14 @@ export default function App() {
         .reduce((s, f) => s + monthlyAmount(f, primary, rates), 0),
     [flows, primary, rates],
   );
+  const [confirmClear, setConfirmClear] = useState(false);
+
+  async function handleClearData() {
+    await clearData();
+    setConfirmClear(false);
+    window.location.reload();
+  }
+
   const [showAdd, setShowAdd] = useState(false);
   const [filter, setFilter] = useState<FilterCategory>("all");
 
@@ -512,6 +520,44 @@ export default function App() {
                     />
                   </button>
                 </div>
+              </div>
+
+              <div className="flex flex-col gap-2 pt-2 border-t border-slate-800">
+                <p className="text-xs text-slate-400 uppercase tracking-widest">
+                  Danger zone
+                </p>
+                {!confirmClear ? (
+                  <button
+                    onClick={() => setConfirmClear(true)}
+                    className="w-full px-4 py-2.5 rounded-lg bg-slate-800 hover:bg-red-900/60 text-red-400 text-sm font-semibold transition text-left flex items-center gap-3"
+                  >
+                    <span className="text-lg">🗑️</span>
+                    <div>
+                      <p>Clear all data</p>
+                      <p className="text-xs font-normal text-slate-500">
+                        Delete all savings, flows, settings and preferences
+                      </p>
+                    </div>
+                  </button>
+                ) : (
+                  <div className="p-4 rounded-lg bg-red-950/50 border border-red-800 flex flex-col gap-3">
+                    <p className="text-sm text-red-300 font-semibold">Are you sure? This cannot be undone.</p>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={handleClearData}
+                        className="flex-1 px-4 py-2 rounded-lg bg-red-700 hover:bg-red-600 text-white text-sm font-bold transition"
+                      >
+                        Yes, delete everything
+                      </button>
+                      <button
+                        onClick={() => setConfirmClear(false)}
+                        className="flex-1 px-4 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 text-sm font-semibold transition"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="flex flex-col gap-2 pt-2 border-t border-slate-800">
